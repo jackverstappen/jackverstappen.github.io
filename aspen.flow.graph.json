@@ -1,6 +1,6 @@
 [
-{"jack":123,"project":"BBSDEV","key":"BBSDEV-10224","type":"Bug","to_node":0},
 {"jack":123,"project":"BBSDEV","key":"BBSDEV-10224","type":"Bug","from_node":0,"to_node":1000001,"cycle":101.0,"sum_cycle":101.0},
+{"jack":123,"project":"BBSDEV","key":"BBSDEV-10224","type":"Bug","to_node":0},
 {"jack":123,"project":"BBSDEV","key":"BBSDEV-10224","type":"Bug","from_node":1000001,"to_node":2000006,"sum_cycle":101.0},
 {"jack":123,"project":"BBSDEV","key":"BBSDEV-13655","type":"Task","from_node":0,"to_node":1000001,"cycle":724.0,"sum_cycle":724.0},
 {"jack":123,"project":"BBSDEV","key":"BBSDEV-13655","type":"Task","from_node":1000001,"to_node":2000006,"sum_cycle":724.0},
