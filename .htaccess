@@ -1,0 +1,4 @@
+RewriteEngine aan 
+RewriteCond %{SERVER_PORT} 80
+RewriteCond %{HTTP_HOST} ^(www\.)?digitizedbeing\.com
+RewriteRule ^(.*)$ https://www.digitizedbeing.com/$1 [R,L]
