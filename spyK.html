@@ -40,6 +40,44 @@
             gap: 8px;
             align-items: center;
         }
+
+        .action-row {
+            background: white;
+            padding: 4px;
+            border-radius: 4px;
+            margin-bottom: 4px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .action-label {
+            font-size: 14px;
+            font-weight: 700;
+            margin: 0;
+        }
+        .action-label p {
+            margin: 0;
+        }
+        .action-ratings {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        .quick-btn {
+            width: 40px;
+            height: 40px;
+            border: 2px solid #d3d3d3;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+
         .set-selector {
             display: flex;
             align-items: center;
@@ -282,7 +320,7 @@
         }
         .modal-content {
             background: white;
-            padding: 30px;
+            padding: 8px;
             border-radius: 8px;
             max-width: 600px;
             width: 90%;
@@ -421,7 +459,6 @@
         .log-item {
             padding: 4px;
             background: #f8f8f8;
-            border-left: 4px solid #0265dc;
             margin-bottom: 4px;
             border-radius: 4px;
             display: flex;
@@ -429,17 +466,26 @@
             align-items: center;
             gap: 4px;
         }
-        .log-item.excellent { border-left-color: #2d9d78; }
-        .log-item.good { border-left-color: #4b9e2d; }
-        .log-item.average { border-left-color: #e68619; }
-        .log-item.poor { border-left-color: #d83790; }
-        .log-item.error { border-left-color: #d7373f; }
+        .xlog-item.excellent { border-left-color: #2d9d78; }
+        .xlog-item.good { border-left-color: #4b9e2d; }
+        .xlog-item.average { border-left-color: #e68619; }
+        .xlog-item.poor { border-left-color: #d83790; }
+        .xlog-item.error { border-left-color: #d7373f; }
+        .xlog-item.best { border-left-color: #2d9d78; }
+        .xlog-item.good { border-left-color: #4b9e2d; }
+        .xlog-item.neuteral { border-left-color: #0265dc; }
+        .xlog-item.bad { border-left-color: #e68619; }
+        .xlog-item.worst { border-left-color: #d7373f; }
         .log-details {
             flex: 1;
             display: flex;
             align-items: center;
             gap: 10px;
             font-size: 14px;
+        }
+        .log-jersey {
+            font-weight: 600;
+            color: #0265dc;
         }
         .log-player {
             font-weight: 600;
@@ -453,11 +499,18 @@
         }
         .log-rating {
             font-weight: 600;
+            width:24px;
+            text-align:center;
             padding: 4px 12px;
             border-radius: 4px;
             font-size: 13px;
             white-space: nowrap;
         }
+        .log-rating.best { background: #e6f5f0; color: #2d9d78; }
+        .log-rating.good { background: #eff7eb; color: #4b9e2d; }
+        .log-rating.neutral { background: #fef4e6; color: #e68619; }
+        .log-rating.bad { background: #fce9f4; color: #d83790; }
+        .log-rating.worst { background: #fde9ea; color: #d7373f; }
         .log-rating.excellent { background: #e6f5f0; color: #2d9d78; }
         .log-rating.good { background: #eff7eb; color: #4b9e2d; }
         .log-rating.average { background: #fef4e6; color: #e68619; }
@@ -522,10 +575,12 @@
 
         <div class="team-container">
             <div class="team-section">
+<!---
                 <div class="team">
                     <p>Players</p>
                     <button class="add-player-btn" id="addPlayer">+</button>
                 </div>
+-->                
                 <div class="player-list" id="team-list"></div>
             </div>
         </div>
@@ -550,14 +605,8 @@
                 <h2>Record Action3</h2>
                 <p id="modal-player">Player</p>
             </div>
-            
-            <div class="section-title">1. Select Action</div>
-            <div class="action-selection" id="actionSelection"></div>
 
-            <div class="rating-section" id="ratingSection">
-                <div class="section-title">2. Rate Performance</div>
-                <div class="rating-buttons" id="ratingButtons"></div>
-            </div>
+            <div class="rating-pad" id="ratingPad"></div>
 
             <div class="modal-footer">
                 <button class="close-btn" id="closeActionModal">Cancel</button>
@@ -620,14 +669,17 @@
         let editingPlayer = null;
         let longPressTimer = null;
 
-        const ratingLabels = { 5: 'Excellent', 4: 'Good', 3: 'Average', 2: 'Poor', 1: 'Error' };
-        const ratingClasses = { 5: 'excellent', 4: 'good', 3: 'average', 2: 'poor', 1: 'error' };
+        //const ratingLabels = { 5: 'Excellent', 4: 'Good', 3: 'Average', 2: 'Poor', 1: 'Error' };
+        //const ratingClasses = { 5: 'excellent', 4: 'good', 3: 'average', 2: 'poor', 1: 'error' };
         const actions = ['serve', 'pass', 'set', 'attack', 'block', 'defense'];
-
+        const ratingLabels = { 2: '++', 1: '+', 0: 'o', "-1": '-', "-2": '--' };
+        const ratingClasses = { 2: 'best', 1: 'good', 0: 'neutral', "-1": 'bad', "-2": 'worst' };
+        
         function init() {
             renderSetButtons();
-            renderActionButtons();
-            renderRatingButtons();
+            renderRatingPad();
+            //renderActionButtons();
+            //renderRatingButtons();
             setupEventListeners();
             loadData();
         }
@@ -642,6 +694,48 @@
                 container.appendChild(btn);
             }
         }
+
+        function renderRatingPad() {
+            const container = document.getElementById('ratingPad');
+            actions.forEach(action => {
+                const row = document.createElement('div');
+                row.className = 'action-row';
+                //row.textContent = action.charAt(0).toUpperCase() + action.slice(1);
+                container.appendChild(row);
+
+                const lbl = document.createElement('div');
+                lbl.className = `action-label`;
+                lbl.innerHTML = `${action.toUpperCase()}`;
+                row.appendChild(lbl);
+
+                const pad = document.createElement('div');
+                pad.className = `action-ratings`;
+                row.appendChild(pad);
+
+                /*
+                lbl.className = `quick-btn ${r.class}`;
+*/
+
+                const ratings = [
+                    { value: 2, label: '++', emoji: '⭐', class: 'best' },
+                    { value: 1, label: '+', emoji: '👍', class: 'good' },
+                    { value: 0, label: 'o', emoji: '👌', class: 'neutral' },
+                    { value: -1, label: '-', emoji: '👎', class: 'bad' },
+                    { value: -2, label: '--', emoji: '❌', class: 'worst' }
+                ];
+                ratings.forEach(r => {
+                    const btn = document.createElement('button');
+
+                    btn.className = `quick-btn ${r.class}`;
+                    btn.innerHTML = `${r.label}`;
+                    btn.onclick = () => recordActionScore(action,r.value);
+                    pad.appendChild(btn);
+                });
+
+            });
+        }
+
+
 
         function renderActionButtons() {
             const container = document.getElementById('actionSelection');
@@ -677,7 +771,7 @@
             document.getElementById('ph4').onclick = () => switchTeam("PH4");
             document.getElementById('help').onclick = () => help;
 
-            document.getElementById('addPlayer').onclick = () => addPlayer('A');
+//            document.getElementById('addPlayer').onclick = () => addPlayer('A');
             document.getElementById('clearBtn').onclick = clearSetData;
             document.getElementById('closeActionModal').onclick = closeModal;
             document.getElementById('closeEditPlayerModal').onclick = closeEditPlayerModal;
@@ -747,28 +841,29 @@
             ];
 
             
-                        const teamPH3 = [
-["Raul Mihaila",49,450562836]
-,["Eduard Mihaila",27,450562831]
-,["Igor Ghidu",26,450562896]
-,["Olivier Chronowski",64,450555321]
-,["Luca Piret",73,450554991]
-,["Elliot Buelens",28,450550705]
-,["Lucas Fays",19,450547219]
-,["Sami Aknaf",99,450554600]
-,["Timo Verstappen",81,450562834]
-,["Antoine Delporte",44,450547217]
-,["Andrei Vana",23,450556697]
-,["Alexandre Chieu",34,450554990]
-,["Alexandre Detry",20,450543341]
-,["Frédéric Denis",21,450543695]
-,["Sébastien Crevecoeur",95,450545358]
-,["Gatien Cornet",32,450546441]
-,["Martin d'Adesky",46,]
-        ]
+            const teamPH3 = [
+                ["Raul Mihaila",49,450562836]
+                ,["Eduard Mihaila",27,450562831]
+                ,["Igor Ghidu",26,450562896]
+                ,["Olivier Chronowski",64,450555321]
+                ,["Luca Piret",73,450554991]
+                ,["Elliot Buelens",28,450550705]
+                ,["Lucas Fays",19,450547219]
+                ,["Sami Aknaf",99,450554600]
+                ,["Timo Verstappen",81,450562834]
+                ,["Antoine Delporte",44,450547217]
+                ,["Andrei Vana",23,450556697]
+                ,["Alexandre Chieu",34,450554990]
+                ,["Alexandre Detry",20,450543341]
+                ,["Frédéric Denis",21,450543695]
+                ,["Sébastien Crevecoeur",95,450545358]
+                ,["Gatien Cornet",32,450546441]
+                ,["Martin d'Adesky",46,]
+            ];
 
             team = "PH3"
             players = teamPH3.map(n=>({
+                id: generateUID(), //.now(),
                 name:n[0],
                 number:n[1],
                 license:n[2]
@@ -777,6 +872,7 @@
             saveData();
             team = "PH4"
             players = teamPH4.map(n=>({
+                id: generateUID(), //.now(),
                 name:n[0],
                 number:n[1],
                 license:n[2]
@@ -1006,11 +1102,11 @@
                     <div style="margin-inline:4px;width:100%">
                         ${p.name}
                     </div>
-                    <button class="delete-player-btn">×</button>
                 `;
+//                    <button class="delete-player-btn">×</button>
                 
                 const deleteBtn = card.querySelector('.delete-player-btn');
-                deleteBtn.onclick = (e) => deletePlayer(p.id, e);
+//                deleteBtn.onclick = (e) => deletePlayer(p.id, e);
 
                 card.addEventListener('mousedown', () => handlePlayerPress(p.id, card));
                 card.addEventListener('mouseup', () => handlePlayerRelease(card));
@@ -1020,6 +1116,7 @@
                 
                 card.onclick = (e) => {
                     if (!card.classList.contains('long-pressing') && e.target !== deleteBtn) {
+                        console.log("p",p);
                         openActionModal(p.id);
                     }
                 };
@@ -1041,6 +1138,9 @@
             const player = players.find(p => p.id === id);
             if (!player) return;
 
+                        console.log("action",id);
+
+
             currentPlayer = { player };
             currentAction = null;
             editingLogIndex = null;
@@ -1058,6 +1158,8 @@
             const setLogs = actionLog.filter(l => l.set === currentSet);
             const log = setLogs[idx];
             const actualIdx = actionLog.indexOf(log);
+
+            console.log("edit",idx,log);
             
             currentPlayer = { player: log.player };
             currentAction = log.action;
@@ -1121,6 +1223,39 @@
             saveData();
         }
 
+        function recordActionScore(action,rating) {
+            if (!currentPlayer) return;
+
+            const { player } = currentPlayer;
+            
+            if (editingLogIndex !== null) {
+                const oldLog = actionLog[editingLogIndex];
+                const oldIdx = player.stats[oldLog.action].indexOf(oldLog.rating);
+                if (oldIdx > -1) player.stats[oldLog.action].splice(oldIdx, 1);
+                
+                //player.stats[currentAction].push(rating);
+                actionLog[editingLogIndex] = {
+                    timestamp: oldLog.timestamp,
+                    player,
+                    action: action,
+                    rating, set: oldLog.set
+                };
+            } else {
+                //player.stats[currentAction].push(rating);
+                actionLog.unshift({
+                    timestamp: new Date(),
+                    player,
+                    action: action,
+                    rating, set: currentSet
+                });
+            }
+            
+            renderTeam();
+            renderActionLog();
+            closeModal();
+            saveData();
+        }
+
         function deleteLogEntry(idx) {
             if (!confirm('Delete this record?')) return;
             
@@ -1160,21 +1295,24 @@
             list.innerHTML = setLogs.map((log, idx) => {
                 const rClass = ratingClasses[log.rating];
                 const rLabel = ratingLabels[log.rating];
-                const time = log.timestamp.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                const time = log.timestamp.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' });
 
                 return `
                     <div class="log-item ${rClass}">
+                        <div class="log-time">${time}</div>
                         <div class="log-details">
-                            <span class="log-player">#${log.player.number} ${log.player.name}</span>
+                            <span class="log-jersey">${log.player.number}</span>
+                            <span class="log-player">${log.player.name}</span>
                             <span class="log-separator">•</span>
                             <span class="log-action">${log.action.charAt(0).toUpperCase() + log.action.slice(1)}</span>
                         </div>
                         <div class="log-rating ${rClass}">${rLabel}</div>
-                        <div class="log-time">${time}</div>
+<!---
                         <div class="log-actions">
                             <button class="log-action-btn" onclick="openEditModal(${idx})">Edit</button>
                             <button class="log-action-btn delete" onclick="deleteLogEntry(${idx})">Delete</button>
                         </div>
+                        --->
                     </div>
                 `;
             }).join('');
