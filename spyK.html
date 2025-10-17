@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Volleyball Team Tracker</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/spectrum-css/3.0.3/spectrum-light.min.css">
+    <style>
+        body {
+            font-family: adobe-clean, 'Source Sans Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .header-left h1 {
+            margin: 0 0 5px 0;
+        }
+        .header-left p {
+            margin: 0;
+        }
+        .header-right {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        .set-selector {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .set-selector label {
+            font-weight: 600;
+            font-size: 16px;
+        }
+        .set-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        .set-btn {
+            width: 40px;
+            height: 40px;
+            border: 2px solid #d3d3d3;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .set-btn:hover {
+            border-color: #0265dc;
+        }
+        .set-btn.active {
+            background: #0265dc;
+            color: white;
+            border-color: #0265dc;
+        }
+        .clear-btn {
+            padding: 10px 20px;
+            background: #d7373f;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        .clear-btn:hover {
+            background: #c2313a;
+        }
+        .teams-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .team-section {
+            background: white;
+            padding: 20px;
+            border-radius: 4px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+        }
+        .player-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            align-items: flex-end;
+        }
+        .form-group {
+            flex: 1;
+        }
+        .form-group.number-field {
+            flex: 0 0 70px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #d3d3d3;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .player-list {
+            margin-top: 8px;
+        }
+        .player-card {
+            background: #f8f8f8;
+            padding: 4px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+        }
+        .player-card:hover {
+            background: #e8e8e8;
+            # transform: translateX(2px);
+        }
+        .player-card.long-pressing {
+            background: #d8e8f8;
+        }
+        .player-info {
+            padding:0px;
+        
+            font-weight: 400;
+        }
+        .player-number {
+            color: #0265dc;
+            font-size: 14px;
+            font-weight:700;
+            margin-right: 10px;
+        }
+        .delete-player-btn {
+            width: 28px;
+            height: 28px;
+            border: 1px solid #d7373f;
+            background: white;
+            color: #d7373f;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+        .delete-player-btn:hover {
+            background: #d7373f;
+            color: white;
+        }
+        .spectrum-Button--cta {
+            background-color: #0265dc;
+            border-color: #0265dc;
+            color: white;
+        }
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            max-width: 600px;
+            width: 90%;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+        }
+        .modal-header {
+            margin-bottom: 25px;
+        }
+        .modal-header h2 {
+            margin: 0 0 10px 0;
+            font-size: 24px;
+        }
+        .modal-header p {
+            margin: 0;
+            color: #6e6e6e;
+        }
+        .section-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #323232;
+        }
+        .action-selection {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+        .action-select-btn {
+            padding: 15px;
+            border: 2px solid #d3d3d3;
+            border-radius: 4px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        .action-select-btn:hover {
+            border-color: #0265dc;
+            background: #f0f7ff;
+        }
+        .action-select-btn.selected {
+            border-color: #0265dc;
+            background: #0265dc;
+            color: white;
+        }
+        .rating-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e1e1e1;
+            opacity: 0.5;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        .rating-section.enabled {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .rating-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: space-between;
+        }
+        .rating-btn {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #d3d3d3;
+            border-radius: 4px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+        .rating-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .rating-btn.excellent { border-color: #2d9d78; }
+        .rating-btn.excellent:hover { background: #e6f5f0; }
+        .rating-btn.good { border-color: #4b9e2d; }
+        .rating-btn.good:hover { background: #eff7eb; }
+        .rating-btn.average { border-color: #e68619; }
+        .rating-btn.average:hover { background: #fef4e6; }
+        .rating-btn.poor { border-color: #d83790; }
+        .rating-btn.poor:hover { background: #fce9f4; }
+        .rating-btn.error { border-color: #d7373f; }
+        .rating-btn.error:hover { background: #fde9ea; }
+        .stats {
+            margin-top: 10px;
+            font-size: 12px;
+            color: #6e6e6e;
+        }
+        .modal-footer {
+            margin-top: 25px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .close-btn {
+            padding: 8px 20px;
+            background: #e1e1e1;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .close-btn:hover {
+            background: #d3d3d3;
+        }
+        .save-btn {
+            padding: 8px 20px;
+            background: #0265dc;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .save-btn:hover {
+            background: #0257c5;
+        }
+        .activity-log {
+            background: white;
+            padding: 20px;
+            border-radius: 4px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+        .activity-log h2 {
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+        .log-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .log-item {
+            padding: 12px;
+            background: #f8f8f8;
+            border-left: 4px solid #0265dc;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+        .log-item.excellent { border-left-color: #2d9d78; }
+        .log-item.good { border-left-color: #4b9e2d; }
+        .log-item.average { border-left-color: #e68619; }
+        .log-item.poor { border-left-color: #d83790; }
+        .log-item.error { border-left-color: #d7373f; }
+        .log-details {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+        }
+        .log-player {
+            font-weight: 600;
+            color: #323232;
+        }
+        .log-separator {
+            color: #959595;
+        }
+        .log-action {
+            color: #6e6e6e;
+        }
+        .log-rating {
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+        .log-rating.excellent { background: #e6f5f0; color: #2d9d78; }
+        .log-rating.good { background: #eff7eb; color: #4b9e2d; }
+        .log-rating.average { background: #fef4e6; color: #e68619; }
+        .log-rating.poor { background: #fce9f4; color: #d83790; }
+        .log-rating.error { background: #fde9ea; color: #d7373f; }
+        .log-time {
+            font-size: 12px;
+            color: #959595;
+            white-space: nowrap;
+        }
+        .log-actions {
+            display: flex;
+            gap: 6px;
+        }
+        .log-action-btn {
+            padding: 6px 12px;
+            border: 1px solid #d3d3d3;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .log-action-btn:hover {
+            background: #f0f0f0;
+        }
+        .log-action-btn.delete {
+            color: #d7373f;
+            border-color: #d7373f;
+        }
+        .log-action-btn.delete:hover {
+            background: #fde9ea;
+        }
+        .empty-log {
+            text-align: center;
+            color: #959595;
+            padding: 40px;
+            font-style: italic;
+        }
+        .edit-player-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-left">
+                <h1>🏐 Volleyball Team Tracker</h1>
+                <p>Compose teams and track player performance</p>
+            </div>
+            <div class="header-right">
+                <div class="set-selector">
+                    <label>Current Set:</label>
+                    <div class="set-buttons" id="setButtons"></div>
+                </div>
+                <button class="clear-btn" id="clearBtn">Clear All Data</button>
+            </div>
+        </div>
+
+        <div class="teams-container">
+            <div class="team-section">
+                <h2>Team A</h2>
+                <div class="player-list" id="teamA-list"></div>
+                <div class="player-form">
+                    <div class="form-group number-field">
+                        <label>#</label>
+                        <input type="number" id="teamA-number" min="0" max="99" placeholder="12">
+                    </div>
+                    <div class="form-group">
+                        <label>Player Name</label>
+                        <input type="text" id="teamA-name" placeholder="John Doe">
+                    </div>
+                    <button class="spectrum-Button spectrum-Button--cta" id="addTeamA">Add</button>
+                </div>
+            </div>
+
+            <div class="team-section">
+                <h2>Team B</h2>
+                <div class="player-list" id="teamB-list"></div>
+                <div class="player-form">
+                    <div class="form-group number-field">
+                        <label>#</label>
+                        <input type="number" id="teamB-number" min="0" max="99" placeholder="7">
+                    </div>
+                    <div class="form-group">
+                        <label>Player Name</label>
+                        <input type="text" id="teamB-name" placeholder="Jane Smith">
+                    </div>
+                    <button class="spectrum-Button spectrum-Button--cta" id="addTeamB">Add</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="activity-log">
+            <h2>Action Log - Set <span id="currentSetDisplay">1</span></h2>
+            <div class="log-list" id="logList">
+                <div class="empty-log">No actions recorded yet</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="actionModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Record Action</h2>
+                <p id="modal-player">Player</p>
+            </div>
+            
+            <div class="section-title">1. Select Action</div>
+            <div class="action-selection" id="actionSelection"></div>
+
+            <div class="rating-section" id="ratingSection">
+                <div class="section-title">2. Rate Performance</div>
+                <div class="rating-buttons" id="ratingButtons"></div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="close-btn" id="closeActionModal">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="editPlayerModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Edit Player</h2>
+                <p id="edit-modal-player">Player</p>
+            </div>
+            
+            <div class="edit-player-form">
+                <div class="form-group">
+                    <label>Jersey Number</label>
+                    <input type="number" id="edit-number" min="0" max="99">
+                </div>
+                <div class="form-group">
+                    <label>Player Name</label>
+                    <input type="text" id="edit-name">
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="close-btn" id="closeEditPlayerModal">Cancel</button>
+                <button class="save-btn" id="savePlayerEdit">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let teams = { A: [], B: [] };
+        let actionLog = [];
+        let currentSet = 1;
+        let currentPlayer = null;
+        let currentAction = null;
+        let editingLogIndex = null;
+        let editingPlayer = null;
+        let longPressTimer = null;
+
+        const ratingLabels = { 5: 'Excellent', 4: 'Good', 3: 'Average', 2: 'Poor', 1: 'Error' };
+        const ratingClasses = { 5: 'excellent', 4: 'good', 3: 'average', 2: 'poor', 1: 'error' };
+        const actions = ['serve', 'pass', 'set', 'attack', 'block', 'defense'];
+
+        function init() {
+            renderSetButtons();
+            renderActionButtons();
+            renderRatingButtons();
+            setupEventListeners();
+            loadData();
+        }
+
+        function renderSetButtons() {
+            const container = document.getElementById('setButtons');
+            for (let i = 1; i <= 5; i++) {
+                const btn = document.createElement('button');
+                btn.className = 'set-btn' + (i === 1 ? ' active' : '');
+                btn.textContent = i;
+                btn.onclick = () => setCurrentSet(i);
+                container.appendChild(btn);
+            }
+        }
+
+        function renderActionButtons() {
+            const container = document.getElementById('actionSelection');
+            actions.forEach(action => {
+                const btn = document.createElement('button');
+                btn.className = 'action-select-btn';
+                btn.textContent = action.charAt(0).toUpperCase() + action.slice(1);
+                btn.onclick = () => selectAction(action);
+                container.appendChild(btn);
+            });
+        }
+
+        function renderRatingButtons() {
+            const container = document.getElementById('ratingButtons');
+            const ratings = [
+                { value: 5, label: 'Excellent', emoji: '⭐', class: 'excellent' },
+                { value: 4, label: 'Good', emoji: '👍', class: 'good' },
+                { value: 3, label: 'Average', emoji: '👌', class: 'average' },
+                { value: 2, label: 'Poor', emoji: '👎', class: 'poor' },
+                { value: 1, label: 'Error', emoji: '❌', class: 'error' }
+            ];
+            ratings.forEach(r => {
+                const btn = document.createElement('button');
+                btn.className = `rating-btn ${r.class}`;
+                btn.innerHTML = `<div style="font-size: 20px;">${r.emoji}</div><div>${r.label}</div>`;
+                btn.onclick = () => recordAction(r.value);
+                container.appendChild(btn);
+            });
+        }
+
+        function setupEventListeners() {
+            document.getElementById('addTeamA').onclick = () => addPlayer('A');
+            document.getElementById('addTeamB').onclick = () => addPlayer('B');
+            document.getElementById('clearBtn').onclick = clearAllData;
+            document.getElementById('closeActionModal').onclick = closeModal;
+            document.getElementById('closeEditPlayerModal').onclick = closeEditPlayerModal;
+            document.getElementById('savePlayerEdit').onclick = savePlayerEdit;
+            
+            document.getElementById('actionModal').onclick = (e) => {
+                if (e.target.id === 'actionModal') closeModal();
+            };
+            document.getElementById('editPlayerModal').onclick = (e) => {
+                if (e.target.id === 'editPlayerModal') closeEditPlayerModal();
+            };
+        }
+
+        function loadData() {
+            const dTeams = JSON.parse(localStorage.getItem("spyK-teams"));
+            const dGame = JSON.parse(localStorage.getItem("spyK-game"));
+            const dSet = localStorage.getItem("spyK-currentSet");
+
+            console.log("Loaded",dTeams,dGame,dSet,currentSet);
+            currentSet = +dSet;
+            teams = dTeams;
+            actionLog = dGame.map((d)=>({
+                ...d,
+                timestamp: new Date(Date.parse(d.timestamp))
+
+            }));
+            setCurrentSet(+dSet)
+
+
+            renderTeam('A');
+            renderTeam('B');
+            renderActionLog();
+
+        }
+
+        function saveData() {
+            // Data kept in memory
+            localStorage.setItem("spyK-teams", JSON.stringify(teams));
+            localStorage.setItem("spyK-game", JSON.stringify(actionLog));
+            localStorage.setItem("spyK-currentSet",currentSet);
+        }
+
+        function clearAllData() {
+            if (!confirm('Clear all data? This cannot be undone.')) return;
+            teams = { A: [], B: [] };
+            actionLog = [];
+            currentSet = 1;
+            setCurrentSet(1);
+            renderTeam('A');
+            renderTeam('B');
+            renderActionLog();
+        }
+
+        function setCurrentSet(setNum) {
+            currentSet = setNum;
+            document.querySelectorAll('.set-btn').forEach((btn, i) => {
+                btn.classList.toggle('active', i + 1 === setNum);
+            });
+            document.getElementById('currentSetDisplay').textContent = setNum;
+            renderActionLog();
+        }
+
+        function addPlayer(team) {
+            const numInput = document.getElementById(`team${team}-number`);
+            const nameInput = document.getElementById(`team${team}-name`);
+            const num = numInput.value.trim();
+            const name = nameInput.value.trim();
+
+            /*
+            if (!num || !name) {
+                alert('Enter both jersey number and name');
+                return;
+            }
+                */
+
+            teams[team].push({
+                id: Date.now(),
+                number: parseInt(num),
+                name: name,
+                stats: { serve: [], pass: [], set: [], attack: [], block: [], defense: [] }
+            });
+
+            numInput.value = '';
+            nameInput.value = '';
+            renderTeam(team);
+            saveData();
+        }
+
+        function deletePlayer(team, id, e) {
+            e.stopPropagation();
+            if (!confirm('Delete player and all records?')) return;
+            
+            teams[team] = teams[team].filter(p => p.id !== id);
+            actionLog = actionLog.filter(log => log.player.id !== id);
+            
+            renderTeam(team);
+            renderActionLog();
+            saveData();
+        }
+
+        function handlePlayerPress(team, id, el) {
+            longPressTimer = setTimeout(() => {
+                el.classList.add('long-pressing');
+                openEditPlayerModal(team, id);
+            }, 500);
+        }
+
+        function handlePlayerRelease(el) {
+            if (longPressTimer) {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+            }
+            el.classList.remove('long-pressing');
+        }
+
+        function openEditPlayerModal(team, id) {
+            const player = teams[team].find(p => p.id === id);
+            if (!player) return;
+
+            editingPlayer = { team, player };
+            document.getElementById('edit-modal-player').textContent = `Team ${team} - #${player.number} ${player.name}`;
+            document.getElementById('edit-number').value = player.number;
+            document.getElementById('edit-name').value = player.name;
+            document.getElementById('editPlayerModal').classList.add('active');
+        }
+
+        function closeEditPlayerModal() {
+            document.getElementById('editPlayerModal').classList.remove('active');
+            editingPlayer = null;
+        }
+
+        function savePlayerEdit() {
+            if (!editingPlayer) return;
+
+            const newNum = parseInt(document.getElementById('edit-number').value);
+            const newName = document.getElementById('edit-name').value.trim();
+
+            if (!newNum || !newName) {
+                alert('Enter both jersey number and name');
+                return;
+            }
+
+            editingPlayer.player.number = newNum;
+            editingPlayer.player.name = newName;
+
+            renderTeam(editingPlayer.team);
+            renderActionLog();
+            closeEditPlayerModal();
+            saveData();
+        }
+
+        function renderTeam(team) {
+            const list = document.getElementById(`team${team}-list`);
+            list.innerHTML = '';
+
+            teams[team].forEach(p => {
+                const card = document.createElement('div');
+                card.className = 'player-card';
+                
+                const avgs = calculateAverages(p.stats);
+                const statsHtml = Object.entries(avgs)
+                    .filter(([_, avg]) => avg > 0)
+                    .map(([action, avg]) => `${action}: ${avg.toFixed(1)}`)
+                    .join(' | ');
+//                        ${statsHtml ? `<div class="stats">${statsHtml}</div>` : ''}
+
+                card.innerHTML = `
+                    <div>
+                        <div class="player-info">
+                            <span class="player-number">#${p.number}</span>
+                            ${p.name}
+                        </div>
+                    </div>
+                    <button class="delete-player-btn">×</button>
+                `;
+                
+                const deleteBtn = card.querySelector('.delete-player-btn');
+                deleteBtn.onclick = (e) => deletePlayer(team, p.id, e);
+                
+                card.addEventListener('mousedown', () => handlePlayerPress(team, p.id, card));
+                card.addEventListener('mouseup', () => handlePlayerRelease(card));
+                card.addEventListener('mouseleave', () => handlePlayerRelease(card));
+                card.addEventListener('touchstart', () => handlePlayerPress(team, p.id, card));
+                card.addEventListener('touchend', () => handlePlayerRelease(card));
+                
+                card.onclick = (e) => {
+                    if (!card.classList.contains('long-pressing') && e.target !== deleteBtn) {
+                        openActionModal(team, p.id);
+                    }
+                };
+                
+                list.appendChild(card);
+            });
+        }
+
+        function calculateAverages(stats) {
+            const avgs = {};
+            for (const [action, ratings] of Object.entries(stats)) {
+                avgs[action] = ratings.length > 0 ? ratings.reduce((a, b) => a + b, 0) / ratings.length : 0;
+            }
+            return avgs;
+        }
+
+        function openActionModal(team, id) {
+            const player = teams[team].find(p => p.id === id);
+            if (!player) return;
+
+            currentPlayer = { team, player };
+            currentAction = null;
+            editingLogIndex = null;
+
+            document.getElementById('modal-player').textContent = `#${player.number} ${player.name} - Team ${team}`;
+            document.getElementById('actionModal').classList.add('active');
+            document.getElementById('ratingSection').classList.remove('enabled');
+            
+            document.querySelectorAll('.action-select-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+        }
+
+        function openEditModal(idx) {
+            const setLogs = actionLog.filter(l => l.set === currentSet);
+            const log = setLogs[idx];
+            const actualIdx = actionLog.indexOf(log);
+            
+            currentPlayer = { team: log.team, player: log.player };
+            currentAction = log.action;
+            editingLogIndex = actualIdx;
+
+            document.getElementById('modal-player').textContent = `Edit: #${log.player.number} ${log.player.name} - Team ${log.team}`;
+            document.getElementById('actionModal').classList.add('active');
+            document.getElementById('ratingSection').classList.add('enabled');
+            
+            document.querySelectorAll('.action-select-btn').forEach(btn => {
+                btn.classList.toggle('selected', btn.textContent.toLowerCase() === log.action);
+            });
+        }
+
+        function selectAction(action) {
+            currentAction = action;
+            document.querySelectorAll('.action-select-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            event.target.classList.add('selected');
+            document.getElementById('ratingSection').classList.add('enabled');
+        }
+
+        function closeModal() {
+            document.getElementById('actionModal').classList.remove('active');
+            currentPlayer = null;
+            currentAction = null;
+            editingLogIndex = null;
+        }
+
+        function recordAction(rating) {
+            if (!currentPlayer || !currentAction) return;
+
+            const { team, player } = currentPlayer;
+            
+            if (editingLogIndex !== null) {
+                const oldLog = actionLog[editingLogIndex];
+                const oldIdx = player.stats[oldLog.action].indexOf(oldLog.rating);
+                if (oldIdx > -1) player.stats[oldLog.action].splice(oldIdx, 1);
+                
+                player.stats[currentAction].push(rating);
+                actionLog[editingLogIndex] = {
+                    timestamp: oldLog.timestamp,
+                    team, player,
+                    action: currentAction,
+                    rating, set: oldLog.set
+                };
+            } else {
+                player.stats[currentAction].push(rating);
+                actionLog.unshift({
+                    timestamp: new Date(),
+                    team, player,
+                    action: currentAction,
+                    rating, set: currentSet
+                });
+            }
+            
+            renderTeam(team);
+            renderActionLog();
+            closeModal();
+            saveData();
+        }
+
+        function deleteLogEntry(idx) {
+            if (!confirm('Delete this record?')) return;
+            
+            const setLogs = actionLog.filter(l => l.set === currentSet);
+            const log = setLogs[idx];
+            const actualIdx = actionLog.indexOf(log);
+            
+            const rIdx = log.player.stats[log.action].indexOf(log.rating);
+            if (rIdx > -1) log.player.stats[log.action].splice(rIdx, 1);
+            
+            actionLog.splice(actualIdx, 1);
+            
+            renderTeam(log.team);
+            renderActionLog();
+            saveData();
+        }
+
+        function renderActionLog() {
+            const list = document.getElementById('logList');
+            const setLogs = actionLog.filter(l => l.set === currentSet);
+            
+            if (setLogs.length === 0) {
+                list.innerHTML = '<div class="empty-log">No actions recorded for this set yet</div>';
+                return;
+            }
+
+            list.innerHTML = setLogs.map((log, idx) => {
+                const rClass = ratingClasses[log.rating];
+                const rLabel = ratingLabels[log.rating];
+                const time = log.timestamp.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+                return `
+                    <div class="log-item ${rClass}">
+                        <div class="log-details">
+                            <span class="log-player">Team ${log.team} - #${log.player.number} ${log.player.name}</span>
+                            <span class="log-separator">•</span>
+                            <span class="log-action">${log.action.charAt(0).toUpperCase() + log.action.slice(1)}</span>
+                        </div>
+                        <div class="log-rating ${rClass}">${rLabel}</div>
+                        <div class="log-time">${time}</div>
+                        <div class="log-actions">
+                            <button class="log-action-btn" onclick="openEditModal(${idx})">Edit</button>
+                            <button class="log-action-btn delete" onclick="deleteLogEntry(${idx})">Delete</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        init();
+    </script>
+</body>
+</html>
