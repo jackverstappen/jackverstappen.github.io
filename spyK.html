@@ -688,9 +688,13 @@
 
       <input type="file" id="fileInput" accept="application/json" style="display:none" />
 
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@observablehq/plot@0.6"></script>
 
     <script>
         const $ = (sel) => document.querySelector(sel);
+
+
 
         let team = "PH4";
         let recording = false;
@@ -718,6 +722,51 @@
             loadData();
         }
 
+        function Likert(responses) {
+            const map = new Map(responses);
+            return {
+                order: Array.from(map.keys()),
+                offset(I, X1, X2, Z) {
+                for (const stacks of I) {
+                    for (const stack of stacks) {
+                    const k = d3.sum(stack, (i) => (X2[i] - X1[i]) * (1 - map.get(Z[i]))) / 2;
+                    for (const i of stack) {
+                        X1[i] -= k;
+                        X2[i] -= k;
+                    }
+                    }
+                }
+                }
+            };
+            }
+
+        function plotChart(width,maxValue,ds) {
+            //const plot = Plot.rectY({length: 10000}, Plot.binX({y: "count"}, {x: Math.random})).plot();
+            const likert = Likert([
+                [-2, -1],
+                [-1, -1],
+                [0, 0],
+                [1, 1],
+                [2, 1]
+                ]);
+            return Plot.plot({
+                style: {
+                backgroundColor: "ccc"
+                },
+
+                height: 24,
+                //width:width|200,
+                x: {axis: null, label: "", tickFormat: Math.abs, domain: [-maxValue, maxValue] },
+                color: { domain: likert.order, scheme: "RdYlGn", legend: false },
+                marks: [
+                    //Plot.frame(),
+                    Plot.barX(ds, Plot.groupZ({ x: "count" }, {fill: "rating", ...likert })),
+      Plot.ruleX([0], { strokeWidth: 2 })
+
+    ]
+            }); 
+            
+        }
         function renderSetButtons() {
             const container = document.getElementById('setButtons');
             for (let i = 1; i <= 5; i++) {
@@ -840,7 +889,6 @@
 
             renderTeam();
             renderActionLog();
-
         }
 
         function saveData() {
@@ -921,7 +969,6 @@
             if (!actionLog.filter(l=>l.set===currentSet).length) return;
             if (!confirm('Clear set data? This cannot be undone.')) return;
             actionLog = actionLog.filter(l => l.set !== currentSet);
-            console.log("?", actionLog)
             saveData();
             renderActionLog();
         }
@@ -937,7 +984,6 @@
 
         function record() {
             recording = !recording;
-            console.log("record");
             const btn = $("#record");
             btn.innerHTML = recording 
               ? `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#ff2d55" stroke="#ff2d55" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /></svg>` 
@@ -1136,37 +1182,65 @@
                 card.className = 'player-card';
                 
                 const avgs = calculateAverages(p.stats);
+
                 const statsHtml = Object.entries(avgs)
                     .filter(([_, avg]) => avg > 0)
                     .map(([action, avg]) => `${action}: ${avg.toFixed(1)}`)
                     .join(' | ');
-//                        ${statsHtml ? `<div class="stats">${statsHtml}</div>` : ''}
 
                 card.innerHTML = `
                     <button class="jersey-btn">${p.number?p.number:"#"}</button>
                     <div style="margin-inline:4px;width:100%">
                         ${p.name}
                     </div>
+                    <div id="plot-${p.number}">
+                    </div>
                 `;
-//                    <button class="delete-player-btn">×</button>
                 
                 const deleteBtn = card.querySelector('.delete-player-btn');
-//                deleteBtn.onclick = (e) => deletePlayer(p.id, e);
-
                 card.addEventListener('mousedown', () => handlePlayerPress(p.id, card));
                 card.addEventListener('mouseup', () => handlePlayerRelease(card));
                 card.addEventListener('mouseleave', () => handlePlayerRelease(card));
                 card.addEventListener('touchstart', () => handlePlayerPress(p.id, card));
                 card.addEventListener('touchend', () => handlePlayerRelease(card));
                 
-                card.onclick = (e) => {
+                card.onclick = (e,pad) => {
                     if (!card.classList.contains('long-pressing') && e.target !== deleteBtn) {
                         openActionModal(p.id);
                     }
                 };
                 
                 list.appendChild(card);
+                const focusLog = actionLog.filter(n=>n);
+                const maxValue = calcMaxValue(focusLog);
+                playerLog = actionLog.filter(log => log.player.id === p.id);
+                const div = document.querySelector(`#plot-${p.number}`);
+                if (div) div.append(
+                    plotChart(48,maxValue,playerLog)
+                );
+
             });
+        }
+
+        function calcMaxValue(ds) {
+            let max=0;
+            players.forEach((p)=>{
+                const playerLog = ds.filter((d)=>d.player.id===p.id)
+                const maxForPlayer = calcMaxPlayerValue(playerLog);
+                console.log('player',p.id,p.name,playerLog,maxForPlayer,max);
+                if (maxForPlayer>max) max = maxForPlayer;
+            })
+            return max;
+        }
+        function calcMaxPlayerValue(ds) {
+            const neg = ds.filter((n)=>n.rating<0).length;
+            const neutral = ds.filter((n)=>n.rating==0).length;
+            const pos = ds.filter((n)=>n.rating>0).length;
+
+            if(ds.length) console.log(ds,neg,neutral,pos)
+
+            return Math.max(neg,pos) + neutral/2 ;
+
         }
 
         function calculateAverages(stats) {
@@ -1203,7 +1277,6 @@
             const log = setLogs[idx];
             const actualIdx = actionLog.indexOf(log);
 
-            console.log("edit",idx,log);
             
             currentPlayer = { player: log.player };
             currentAction = log.action;
@@ -1238,6 +1311,7 @@
             if (!currentPlayer || !currentAction) return;
 
             const { player } = currentPlayer;
+            console.log("record",player);
             
             if (editingLogIndex !== null) {
                 const oldLog = actionLog[editingLogIndex];
@@ -1271,6 +1345,7 @@
             if (!currentPlayer) return;
 
             const { player } = currentPlayer;
+            console.log("recordAction",player,action,rating);
             
             if (editingLogIndex !== null) {
                 const oldLog = actionLog[editingLogIndex];
