@@ -241,7 +241,7 @@
 
         }
 
-        .help-btn {
+        .record-btn {
             width: 40px;
             height: 40px;
             border: 1px solid #000;
@@ -257,11 +257,6 @@
             transition: all 0.2s;
             flex-shrink: 0;
         }
-        .help-btn:hover {
-            background: #000;
-            color: white;
-        }
-
 
         .add-player-btn {
             width: 28px;
@@ -561,7 +556,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <button class="help-btn" id="logoBtn">
+            <button class="record-btn" id="logoBtn">
                 <svg xmlns="http://www.w3.org/2000/svg" id="logo" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-ball-volleyball"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M12 12a8 8 0 0 0 8 4" /><path d="M7.5 13.5a12 12 0 0 0 8.5 6.5" /><path d="M12 12a8 8 0 0 0 -7.464 4.928" /><path d="M12.951 7.353a12 12 0 0 0 -9.88 4.111" /><path d="M12 12a8 8 0 0 0 -.536 -8.928" /><path d="M15.549 15.147a12 12 0 0 0 1.38 -10.611" /></svg>
             </button>
 
@@ -569,7 +564,7 @@
                 <button class="team-btn" id="ph3">PH3</button>
                 <button class="team-btn active" id="ph4">PH4</button>
                 <div>|</div>
-                <button class="help-btn" id="help">?</button>
+                <button class="record-btn" id="record"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#000"><path d="M9 4h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h2a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2z" /><path d="M17 4h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h2a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2z" /></svg></button>
             </div>
         </div>
 
@@ -578,6 +573,7 @@
 <!---
                 <div class="team">
                     <p>Players</p>
+
                     <button class="add-player-btn" id="addPlayer">+</button>
                 </div>
 -->                
@@ -660,6 +656,7 @@
         const $ = (sel) => document.querySelector(sel);
 
         let team = "PH4";
+        let recording = false;
         let players = [];
         let actionLog = [];
         let currentSet = 1;
@@ -769,7 +766,7 @@
         function setupEventListeners() {
             document.getElementById('ph3').onclick = () => switchTeam("PH3");
             document.getElementById('ph4').onclick = () => switchTeam("PH4");
-            document.getElementById('help').onclick = () => help;
+            document.getElementById('record').onclick = () => record();
 
 //            document.getElementById('addPlayer').onclick = () => addPlayer('A');
             document.getElementById('clearBtn').onclick = clearSetData;
@@ -899,6 +896,17 @@
             });
             //document.getElementById('currentSetDisplay').textContent = setNum;
             renderActionLog();
+        }
+
+        function record() {
+            recording = !recording;
+            console.log("record");
+            const btn = $("#record");
+            btn.innerHTML = recording 
+              ? `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#ff2d55" stroke="#ff2d55" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /></svg>` 
+              : `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#000"><path d="M9 4h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h2a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2z" /><path d="M17 4h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h2a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2z" /></svg>`;
+
+
         }
 
         function switchTeam(selectedTeam) {
@@ -1116,7 +1124,6 @@
                 
                 card.onclick = (e) => {
                     if (!card.classList.contains('long-pressing') && e.target !== deleteBtn) {
-                        console.log("p",p);
                         openActionModal(p.id);
                     }
                 };
@@ -1135,10 +1142,9 @@
         }
 
         function openActionModal(id) {
+            if (!recording) return;
             const player = players.find(p => p.id === id);
             if (!player) return;
-
-                        console.log("action",id);
 
 
             currentPlayer = { player };
@@ -1147,7 +1153,7 @@
 
             document.getElementById('modal-player').textContent = `#${player.number} ${player.name}`;
             document.getElementById('actionModal').classList.add('active');
-            document.getElementById('ratingSection').classList.remove('enabled');
+            //document.getElementById('ratingSection').classList.remove('enabled');
             
             document.querySelectorAll('.action-select-btn').forEach(btn => {
                 btn.classList.remove('selected');
