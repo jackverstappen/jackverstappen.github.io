@@ -761,7 +761,7 @@
             };
             }
 
-        function plotChart(width,maxValue,ds) {
+        function plotChart(maxValue,ds) {
             //const plot = Plot.rectY({length: 10000}, Plot.binX({y: "count"}, {x: Math.random})).plot();
             const likert = Likert([
                 [-2, -1],
@@ -1227,10 +1227,10 @@
 
                 card.innerHTML = `
                     <button class="jersey-btn">${p.number?p.number:"#"}</button>
-                    <div style="margin-inline:4px;width:100%">
+                    <div style="margin-inline:4px;margin-right:10px;width:100%">
                         ${p.name}
                     </div>
-                    <div id="plot-${p.number}">
+                    <div style="width:100%" id="plot-${p.number}">
                     </div>
                 `;
                 
@@ -1253,7 +1253,7 @@
                 playerLog = actionLog.filter(log => log.player.id === p.id);
                 const div = document.querySelector(`#plot-${p.number}`);
                 if (div && !recording) div.append(
-                    plotChart(48,maxValue,playerLog)
+                    plotChart(36,maxValue,playerLog)
                 );
 
             });
