@@ -66,7 +66,7 @@
             gap: 15px;
         }
         .action-label {
-            font-size: 14px;
+            font-size: 12pt;
             font-weight: 700;
             margin: 0;
         }
@@ -970,6 +970,7 @@
             if (!confirm('Clear set data? This cannot be undone.')) return;
             actionLog = actionLog.filter(l => l.set !== currentSet);
             saveData();
+            renderTeam();
             renderActionLog();
         }
 
@@ -989,7 +990,7 @@
               ? `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#ff2d55" stroke="#ff2d55" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /></svg>` 
               : `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#000"><path d="M9 4h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h2a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2z" /><path d="M17 4h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h2a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2z" /></svg>`;
 
-
+            renderTeam();
         }
 
         function switchTeam(selectedTeam) {
@@ -1215,7 +1216,7 @@
                 const maxValue = calcMaxValue(focusLog);
                 playerLog = actionLog.filter(log => log.player.id === p.id);
                 const div = document.querySelector(`#plot-${p.number}`);
-                if (div) div.append(
+                if (div && !recording) div.append(
                     plotChart(48,maxValue,playerLog)
                 );
 
@@ -1227,7 +1228,6 @@
             players.forEach((p)=>{
                 const playerLog = ds.filter((d)=>d.player.id===p.id)
                 const maxForPlayer = calcMaxPlayerValue(playerLog);
-                console.log('player',p.id,p.name,playerLog,maxForPlayer,max);
                 if (maxForPlayer>max) max = maxForPlayer;
             })
             return max;
@@ -1236,8 +1236,6 @@
             const neg = ds.filter((n)=>n.rating<0).length;
             const neutral = ds.filter((n)=>n.rating==0).length;
             const pos = ds.filter((n)=>n.rating>0).length;
-
-            if(ds.length) console.log(ds,neg,neutral,pos)
 
             return Math.max(neg,pos) + neutral/2 ;
 
@@ -1345,7 +1343,6 @@
             if (!currentPlayer) return;
 
             const { player } = currentPlayer;
-            console.log("recordAction",player,action,rating);
             
             if (editingLogIndex !== null) {
                 const oldLog = actionLog[editingLogIndex];
