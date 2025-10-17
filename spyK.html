@@ -1253,7 +1253,7 @@
                 playerLog = actionLog.filter(log => log.player.id === p.id);
                 const div = document.querySelector(`#plot-${p.number}`);
                 if (div && !recording) div.append(
-                    plotChart(36,maxValue,playerLog)
+                    plotChart(maxValue,playerLog)
                 );
 
             });
