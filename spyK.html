@@ -20,7 +20,7 @@
         }
         .header {
             background: white;
-            padding: 4px;
+            padding: 2px;
             border-radius: 4px;
             margin-bottom: 4px;
             box-shadow: 0 1px 4px rgba(0,0,0,0.1);
@@ -778,11 +778,11 @@
                 height: 24,
                 //width:width|200,
                 x: {axis: null, label: "", tickFormat: Math.abs, domain: [-maxValue, maxValue] },
-                color: { domain: likert.order, scheme: "RdYlGn", legend: false },
+                color: { domain: likert.order, scheme: "RdBu", legend: false },
                 marks: [
                     //Plot.frame(),
                     Plot.barX(ds, Plot.groupZ({ x: "count" }, {fill: "rating", ...likert })),
-      Plot.ruleX([0], { strokeWidth: 2 })
+      Plot.ruleX([0], { strokeWidth: 4 })
 
     ]
             }); 
@@ -928,7 +928,7 @@
         }
 
         function resetData() {
-            const teamPH4 = [
+            const teamPH4log = [
                 ["Yago Verstappen",68,450565321],
                 ["David Atas",31,450562840],
                 ["Guillaume De Greef",66,450562830],
@@ -942,9 +942,8 @@
                 ["Mohamed Lamouchi",30,450656932],
                 ["Lucca Zoccolo",11,450656933]
             ];
-
             
-            const teamPH3 = [
+            const teamPH3log = [
                 ["Raul Mihaila",49,450562836]
                 ,["Eduard Mihaila",27,450562831]
                 ,["Igor Ghidu",26,450562896]
@@ -962,6 +961,43 @@
                 ,["Sébastien Crevecoeur",95,450545358]
                 ,["Gatien Cornet",32,450546441]
                 ,["Martin d'Adesky",46,]
+            ];
+
+            const teamPH4 = [
+                ["Massil Yahiaoui",7,450656928],
+                ["Pierre Lardennois",9,450661103],
+                ["Lucca Zoccolo",11,450656933],
+                ["Nicolas Nachtergal",18,450656929],
+                ["Martin Denaux",22,450562854],
+                ["Cédric Waefelaer",29,450565323],
+                ["Mohamed Lamouchi",30,450656932],
+                ["David Atas",31,450562840],
+                ["Boris Meeusen",37,],
+                ["Rayan Bouanan",45,450562837],
+                ["Guillaume De Greef",66,450562830],
+                ["Yago Verstappen",68,450565321]
+            ];
+            
+            const teamPH3 = [
+
+                ["Lucas Fays",19,450547219]
+                ,["Alexandre Detry",20,450543341]
+                ,["Frédéric Denis",21,450543695]
+                ,["Andrei Vana",23,450556697]
+                ,["Igor Ghidu",26,450562896]
+                ,["Eduard Mihaila",27,450562831]
+                ,["Elliot Buelens",28,450550705]
+                ,["Gatien Cornet",32,450546441]
+                ,["Alexandre Chieu",34,450554990]
+                ,["Antoine Delporte",44,450547217]
+                ,["Martin d'Adesky",46,]
+                ,["Raul Mihaila",49,450562836]
+                ,["Olivier Chronowski",64,450555321]
+                ,["Luca Piret",73,450554991]
+                ,["Timo Verstappen",81,450562834]
+                ,["Sébastien Crevecoeur",95,450545358]
+                ,["Sami Aknaf",99,450554600]
+
             ];
 
             team = "PH3"
@@ -1032,6 +1068,7 @@
         }
 
         $('#logoBtn').addEventListener('click', () => {
+            console.log("reset");
             resetData();
         });
 
