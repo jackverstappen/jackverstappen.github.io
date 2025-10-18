@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Interactive Volleyball Court</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/iconoir-icons/iconoir@main/css/iconoir.css" />
+
+  <style>
+
+    p:before {
+    content: '';
+    width: 1em;
+    height: 1em;
+    background-size: cover;
+    display: block;
+    }
+
+    .info:before{
+    background-image: url('data:image/svg+xml;utf8,<svg fill="%23fff" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><path d="M14 9.5c0-.825.675-1.5 1.5-1.5h1c.825 0 1.5.675 1.5 1.5v1c0 .825-.675 1.5-1.5 1.5h-1c-.825 0-1.5-.675-1.5-1.5v-1zM20 24h-8v-2h2v-6h-2v-2h6v8h2z"/><path d="M16 0C7.163 0 0 7.163 0 16s7.163 16 16 16 16-7.163 16-16S24.837 0 16 0zm0 29C8.82 29 3 23.18 3 16S8.82 3 16 3s13 5.82 13 13-5.82 13-13 13z"/></svg>');
+    }
+
+    :root {
+      --court-inside: #f6d1a7; /* light wood */
+      --court-outside: #ed9d41; /* light wood */
+      --court-bg: #f6d1a7; /* light wood */
+      --court-line: #ffffff;
+      --court-border: #c89b6e; 
+      --ball: #ebac25; /* gold */
+      --team-x: #ebac25; /* gold */
+      --team-a: #2563eb; /* blue */
+      --team-b: #ef4444; /* red */
+      --player-ring: #111827; /* dark ring */
+      --ball-ring: #111827; /* dark ring */
+    }
+
+    html, body {
+      height: 100%;
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+      background: #0b1220;
+      color: #e5e7eb;
+    }
+
+    .app {
+      display: grid;
+      place-items: center;
+      gap: 1rem;
+      padding: 2rem 1rem 3rem;
+    }
+
+    .title {
+      font-weight: 900;
+      letter-spacing: .3px;
+      text-align: center;
+      line-height: 1.1;
+    }
+
+    .panel {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.2rem 1rem;
+      justify-content: center;
+      align-items: center;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: 0.75rem 1rem;
+      border-radius: 4px;
+      backdrop-filter: blur(6px);
+    }
+
+    .btn {
+      appearance: none;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.08);
+      color: #fff;
+      padding: 0.2rem 0.2rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 100;
+    }
+    .btn:hover { filter: brightness(1.1); }
+
+    .hint { opacity: 0.85; font-size: 0.9rem; }
+
+    /* COURT */
+    .court-wrap {
+      width: min(92vw, 1100px);
+    }
+
+    .court {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 2 / 1; /* 18m x 9m */
+      background: var(--court-bg);
+      border: 8px solid var(--court-border);
+      border-radius: 4px;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+      overflow: hidden;
+      user-select: none;
+      touch-action: none; /* improve pointer events on touch */
+    }
+
+    /* Boundary lines */
+    .court::before, .court::after { content: ""; position: absolute; inset: 0; pointer-events: none; }
+    /* Outer lines (already have border, but these add top/bottom stripes to look crisp) */
+    .court::before { box-shadow: inset 0 0 0 4px var(--court-line); }
+    .area { position: absolute; background: var(--court-outside); opacity: 0.4; pointer-events: none; }
+    .area.attack { position: absolute; background: var(--court-outside); opacity: 0.8; pointer-events: none; }
+
+    /* Net & attack lines */
+    .line { position: absolute; background: var(--court-line); opacity: 0.9; pointer-events: none; }
+    .line.helper { position: absolute; background: var(--court-line); opacity: .2; pointer-events: none; }
+    .line.vertical { top: 0; bottom: 0; width: 4px; }
+    .line.horizontal { left: 0; right: 0; height: 4px; }
+    .line.helper.vertical { top: 0; bottom: 0; width: 2px; }
+    .line.helper.horizontal { left: 0; right: 0; height: 2px; }
+
+    /* Center line (net) at 50% of court length (x-axis) */
+    .net { left: 50%; transform: translateX(-50%); width: 7px; background: #fff; box-shadow: 0 0 0 1px rgba(0,0,0,0.15), 0 0 12px rgba(255,255,255,0.45); }
+
+    /* Attack lines at 6m and 12m from left edge (18m total => 33.333% and 66.666%) */
+    .attack-left { left: 33.333%; }
+    .attack-right { left: 66.666%; }
+    .defense-left { left: 16.667%; }
+    .defense-right { left: 83.333%; }
+
+    /* Centerline horizontally at 50% would be vertical line, so we add top/bottom sidelines visually stronger */
+    .sideline-top { top: 0; }
+    .sideline-bottom { bottom: 0; }
+    .helperline-top { top: 33.33%; }
+    .helperline-bottom { bottom: 33.33%; }
+
+
+    /* PLAYERS */
+    .player {
+      position: absolute;
+      width: clamp(22px, 2.6vw, 32px);
+      height: clamp(22px, 2.6vw, 32px);
+      border-radius: 9999px;
+      display: grid;
+      place-items: center;
+      font-size: clamp(10px, 1.3vw, 14px);
+      font-weight: 800;
+      color: #fff;
+      cursor: grab;
+      border: 1px solid var(--player-ring);
+      box-shadow: 4px 4px 10px rgba(0,0,0,0.95), 0 0 0 3px rgba(255,255,255,.4) inset;
+      transform: translate(-50%, -50%); /* position by center */
+      touch-action: none; /* allow custom dragging on touch */
+    }
+    .player:active { cursor: grabbing; }
+    .player[data-team="A"] { background: var(--team-a); }
+    .player[data-team="B"] { background: var(--team-b); }
+    .player[data-team="X"] { background: var(--team-x) }
+
+    /* Labels on halves */
+    .half-label {
+      position: absolute;
+      top: 8px;
+      left: 10px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      background: rgba(0,0,0,0.35);
+      color: #fff;
+      font-size: 12px;
+      letter-spacing: 0.4px;
+      pointer-events: none;
+      z-index: 3;
+    }
+    .half-label.right { left: auto; right: 10px; }
+
+    .legend { display: flex; gap: 0.75rem; align-items: center; }
+    .dot { width: 14px; height: 14px; border-radius: 9999px; display: inline-block; vertical-align: middle; margin-right: 6px; border: 2px solid var(--player-ring); }
+    .dot.a { background: var(--team-a); }
+    .dot.b { background: var(--team-b); }
+
+    .footer-note { opacity: 0.7; font-size: 0.85rem; text-align: center; }
+      /* MOVE PLANNING (arrows) */
+    svg.moves {
+      position: absolute;
+      inset: 0;
+      overflow: visible;
+      pointer-events: none; /* allow clicks to pass through unless on handles */
+      z-index: 2;
+    }
+    .move-handle {
+      pointer-events: all; /* enable dragging */
+      cursor: grab;
+    }
+    .move-handle:active { cursor: grabbing; }
+    .start-ring { fill: none; stroke: #111827; stroke-width: 2.5; }
+    .end-ghost { fill: rgba(255,255,255,0.75); stroke: #111827; stroke-width: 2.5; }
+    .move-arrow { stroke: #111827; stroke-width: 3; }
+    .move-arrow.track { stroke: rgba(255,255,255,0.9); stroke-width: 4.5; }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <h1 class="title">Interactive Volleyball Court</h1>
+    <div class="panel">
+      <button class="btn" id="resetBtn" title="Reset all player positions">
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="20"
+  height="20"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="#fff"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M20 5v14l-12 -7z" />
+  <path d="M4 5l0 14" />
+</svg>
+</button>
+      <button class="btn" id="swapSidesBtn" title="Swap teams across the net"><!--
+tags: [test, visual, user]
+version: "1.76"
+unicode: "f25f"
+-->
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="20"
+  height="20"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="#fff"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M16 21h3c.81 0 1.48 -.67 1.48 -1.48l.02 -.02c0 -.82 -.69 -1.5 -1.5 -1.5h-3v3z" />
+  <path d="M16 15h2.5c.84 -.01 1.5 .66 1.5 1.5s-.66 1.5 -1.5 1.5h-2.5v-3z" />
+  <path d="M4 9v-4c0 -1.036 .895 -2 2 -2s2 .964 2 2v4" />
+  <path d="M2.99 11.98a9 9 0 0 0 9 9m9 -9a9 9 0 0 0 -9 -9" />
+  <path d="M8 7h-4" />
+</svg>
+</i></button>
+      <button class="btn" id="rotateA" title="Clockwise rotation for Team A"><!--
+tags: [refresh, synchronization, reload, restart, spinner, loader, ajax, update, arrows]
+category: Arrows
+version: "1.0"
+unicode: "eb15"
+-->
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="20"
+  height="20"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="#fff"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M4.05 11a8 8 0 1 1 .5 4m-.5 5v-5h5" />
+</svg>
+</button>
+      <button class="btn" id="rotateB" title="Clockwise rotation for Team B"><!--
+tags: [refresh, synchronization, reload, restart, spinner, loader, ajax, update, arrows]
+category: Arrows
+version: "1.0"
+unicode: "eb16"
+-->
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="20"
+  height="20"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="#fff"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M19.95 11a8 8 0 1 0 -.5 4m.5 5v-5h-5" />
+</svg>
+</i></button>
+      <button class="btn" id="saveBtn" title="Save current layout in this browser"><!--
+category: Arrows
+tags: [save, arrow]
+version: "1.0"
+unicode: "ea96"
+-->
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="20"
+  height="20"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="#fff"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" />
+  <path d="M7 11l5 5l5 -5" />
+  <path d="M12 4l0 12" />
+</svg>
+</i></button>
+      <button class="btn" id="loadBtn" title="Load saved layout"><!--
+category: Arrows
+tags: [file, arrow]
+version: "1.0"
+unicode: "eb47"
+-->
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="20"
+  height="20"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="#fff"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" />
+  <path d="M7 9l5 -5l5 5" />
+  <path d="M12 4l0 12" />
+</svg>
+</i></button>
+      <button class="btn" id="planBtn" title="Plan a player's move (click a player, then click a destination)"><!--
+tags: [path, journey, direction, trail, navigate, travel, way, road, travel-route, route-way]
+category: Map
+version: "1.0"
+unicode: "eb17"
+-->
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="20"
+  height="20"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="#fff"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M3 19a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+  <path d="M19 7a2 2 0 1 0 0 -4a2 2 0 0 0 0 4z" />
+  <path d="M11 19h5.5a3.5 3.5 0 0 0 0 -7h-8a3.5 3.5 0 0 1 0 -7h4.5" />
+</svg>
+</button>
+      <button class="btn" id="clearMovesBtn" title="Clear all planned moves"><!--
+tags: [path, journey, direction, trail, navigate, travel, way, road, travel-route, route-way]
+category: Map
+version: "1.66"
+unicode: "f194"
+-->
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="20"
+  height="20"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="#fff"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M6 19m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+  <path d="M18 5m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+  <path d="M12 19h4.5c.71 0 1.372 -.212 1.924 -.576m1.545 -2.459a3.5 3.5 0 0 0 -3.469 -3.965h-.499m-4 0h-3.501a3.5 3.5 0 0 1 -2.477 -5.972m2.477 -1.028h3.5" />
+  <path d="M3 3l18 18" />
+</svg>
+</button>
+      <span class="hint">Tip: drag the dots. Works with mouse or touch.</span>
+      <span class="legend"><span class="dot a"></span>Team A &nbsp; <span class="dot b"></span>Team B</span>
+    </div>
+
+    <div class="court-wrap">
+      <div class="court" id="court">
+        <!-- SVG overlay for planned moves -->
+        <svg class="moves" id="movesSvg" viewBox="0 0 1800 900" preserveAspectRatio="none">
+          <defs>
+            <marker id="arrowHead" viewbox= "0 0 20 20" markerWidth="10" markerHeight="10" refX="10" refY="5" orient="auto" markerUnits="strokeWidth">
+              <path d="M0,0 L10,5 L0,10 z" fill="#111827" />
+            </marker>
+            <marker id="arrowHeadOrig" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth">
+              <path d="M0,0 L10,5 L0,10 z" fill="#111827" />
+            </marker>
+            <marker id="arrowHeadTrack" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="userSpaceOnUse">
+              <path d="M0,0 L10,5 L0,10 z" fill="rgba(255,255,255,0.9)" />
+            </marker>
+          </defs>
+        </svg>
+        <div class="half-label">Team A</div>
+        <div class="half-label right">Team B</div>
+
+        <!-- Lines -->
+        <div class="area " style="left:12.5%; top:20%; height: 60%; width:75%"></div>
+        <div class="area attack" style="left:37.5%; top:20%; height: 60%; width:25%"></div>
+        <div class="line vertical" style="left:12.5%; top:20%; height: 60%"></div>
+        <div class="line vertical" style="left:37.5%; top:20%; height: 60%"></div>
+        <div class="line vertical" style="left:50%; top:15%; height: 70%"></div>
+        <div class="line vertical" style="left:62.5%; top:20%; height: 60%"></div>
+        <div class="line vertical" style="left:87.5%; top:20%; height: 60%"></div>
+        <div class="line horizontal" style="left:12.5%; top:20%; width: 75%"></div>
+        <div class="line horizontal" style="left:12.5%; bottom:20%; width: 75%"></div>
+        <!-- <div class="line vertical attack-left" style="height: 50%"></div>
+        <div class="line vertical net" style="height: 100%"></div>
+        <div class="line vertical attack-right" style="height: 100%"></div>
+        <div class="line horizontal sideline-top"></div>
+        <div class="line horizontal sideline-bottom"></div>
+        <div class="line helper horizontal helperline-top"></div>
+        <div class="line helper horizontal helperline-bottom"></div>
+        <div class="line helper vertical defense-left" style="height: 100%"></div>
+        <div class="line helper vertical defense-right" style="height: 100%"></div>
+        -->
+
+        <!-- Players (center-positioned via transform) -->
+        <!-- Team A: A1..A6 -->
+        <div class="player" data-id="A1" data-team="A">A1</div>
+        <div class="player" data-id="A2" data-team="A">A2</div>
+        <div class="player" data-id="A3" data-team="A">A3</div>
+        <div class="player" data-id="A4" data-team="A">A4</div>
+        <div class="player" data-id="A5" data-team="A">A5</div>
+        <div class="player" data-id="A6" data-team="A">A6</div>
+
+        <!-- Team B: B1..B6 -->
+        <div class="player" data-id="B1" data-team="B">B1</div>
+        <div class="player" data-id="B2" data-team="B">B2</div>
+        <div class="player" data-id="B3" data-team="B">B3</div>
+        <div class="player" data-id="B4" data-team="B">B4</div>
+        <div class="player" data-id="B5" data-team="B">B5</div>
+        <div class="player" data-id="B6" data-team="B">B6</div>
+        <div class="player" data-id="X" data-team="X"><!--
+tags: [point, set, match, attacker, ace, setter, serve]
+category: Sport
+version: "1.10"
+unicode: "ec2b"
+-->
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="20"
+  height="20"
+  viewBox="0 0 24 24"
+  fill="none"
+  stroke="#000"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+>
+  <path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" />
+  <path d="M12 12a8 8 0 0 0 8 4" />
+  <path d="M7.5 13.5a12 12 0 0 0 8.5 6.5" />
+  <path d="M12 12a8 8 0 0 0 -7.464 4.928" />
+  <path d="M12.951 7.353a12 12 0 0 0 -9.88 4.111" />
+  <path d="M12 12a8 8 0 0 0 -.536 -8.928" />
+  <path d="M15.549 15.147a12 12 0 0 0 1.38 -10.611" />
+</svg>
+</div>
+
+      </div>
+    </div>
+
+    <div class="panel">
+      <button class="btn" id="A1" title="A1">A1</button>
+      <button class="btn" id="A2" title="A2">A2</button>
+      <button class="btn" id="A3" title="A3">A3</button>
+      <button class="btn" id="A4" title="A4">A4</button>
+      <button class="btn" id="A5" title="A5">A5</button>
+      <button class="btn" id="A6" title="A6">A6</button>
+      <button class="btn" id="B1" title="B1">B1</button>
+      <button class="btn" id="B2" title="B2">B2</button>
+      <button class="btn" id="B3" title="B3">B3</button>
+      <button class="btn" id="B4" title="B4">B4</button>
+      <button class="btn" id="B5" title="B5">B5</button>
+      <button class="btn" id="B6" title="B6">B6</button>
+    </div>
+
+
+    <p class="footer-note">Initial layout shows standard rotation (1–6: right-back to left-front). You can drag players anywhere within the court. Saved layout is stored only in this browser.</p>
+  </main>
+
+  <script>
+    /**
+     * Simple draggable players within the volleyball court.
+     * Coordinates are stored as percentages of the court's width/height so layout is responsive.
+     */
+
+    const court = document.getElementById('court');
+    const labels = Array.from(court.querySelectorAll('.half-label'));
+    const players = Array.from(court.querySelectorAll('.player'));
+    const ball = court.querySelectorAll('.ball')[0];
+
+    // Default positions (percentages of court width/height), oriented with Team A on the left, Team B on the right.
+    // Using common rotation spots:
+    // Back row: 1 (right back), 6 (middle back), 5 (left back)
+    // Front row: 2 (right front), 3 (middle front), 4 (left front)
+    const defaults = {
+      Ball: { x: 50, y: 50 }, // RB back row
+      X: { x: 50, y: 50 }, // RB back row
+      // Team A (left half: x roughly 15%..40%)
+      A1: { x: 22, y: 75 }, // RB back row
+      A6: { x: 30, y: 50 }, // MB back row
+      A5: { x: 22, y: 25 }, // LB back row
+      A2: { x: 42, y: 75 }, // RF front row
+      A3: { x: 42, y: 50 }, // MF front row
+      A4: { x: 42, y: 25 }, // LF front row
+
+      // Team B (right half: x roughly 60%..85%)
+      B5: { x: 78, y: 75 },
+      B6: { x: 70, y: 50 },
+      B1: { x: 78, y: 25 },
+      B4: { x: 58, y: 75 },
+      B3: { x: 58, y: 50 },
+      B2: { x: 58, y: 25 },
+    };
+
+    // Planned moves: { [playerId]: { start:{x,y}, end:{x,y} } }
+    let plannedMoves = {};
+
+    function setPlayerPosition(el, xPct, yPct) {
+      const clamped = clampToCourt(xPct, yPct, el);
+      el.style.left = clamped.x + '%';
+      el.style.top = clamped.y + '%';
+    }
+
+    function clampToCourt(xPct, yPct, el) {
+      // Keep the player's center within visible bounds (consider element size)
+      const rect = court.getBoundingClientRect();
+      const pxX = xPct / 100 * rect.width;
+      const pxY = yPct / 100 * rect.height;
+      const r = el.getBoundingClientRect();
+      const radius = r.width / 2; // since translate(-50%, -50%) centers it
+
+      // Convert back to percent after clamping
+      const minX = radius;
+      const maxX = rect.width - radius;
+      const minY = radius;
+      const maxY = rect.height - radius;
+
+      const clampedX = Math.min(Math.max(pxX, minX), maxX);
+      const clampedY = Math.min(Math.max(pxY, minY), maxY);
+
+      return {
+        x: (clampedX / rect.width) * 100,
+        y: (clampedY / rect.height) * 100,
+      };
+    }
+
+    function initPositions() {
+      for (const el of players) {
+        const id = el.dataset.id;
+        const pos = defaults[id];
+        if (pos) setPlayerPosition(el, pos.x, pos.y);
+      }
+      setPlayerPosition(ball, defaults.Ball.x, defaults.Ball.y)
+    }
+
+    // Drag logic via Pointer Events (works for mouse & touch)
+    let dragging = null;
+    let offset = { x: 0, y: 0 };
+
+
+
+    players.forEach(el => {
+      el.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        el.setPointerCapture(e.pointerId);
+        dragging = el;
+        const rect = court.getBoundingClientRect();
+        const playerRect = el.getBoundingClientRect();
+        offset.x = e.clientX - playerRect.left - playerRect.width / 2;
+        offset.y = e.clientY - playerRect.top - playerRect.height / 2;
+
+        // If we're in plan mode and no player has been selected yet, set this as the source
+        if (planMode.active && !planMode.selectedId) {
+          planMode.selectedId = el.dataset.id;
+          flash(`Selected ${planMode.selectedId}. Now click a destination on the court.`);
+        }
+      });
+    });
+
+    window.addEventListener('pointermove', (e) => {
+      if (!dragging) return;
+      const rect = court.getBoundingClientRect();
+      const x = ((e.clientX - rect.left - offset.x) / rect.width) * 100;
+      const y = ((e.clientY - rect.top - offset.y) / rect.height) * 100;
+      setPlayerPosition(dragging, x, y);
+      // If a planned move exists for this player, update start anchor
+      const id = dragging?.dataset?.id;
+      if (id && plannedMoves[id]) {
+        plannedMoves[id].start = { x: parseFloat(dragging.style.left), y: parseFloat(dragging.style.top) };
+        renderPlannedMoves();
+      }
+    });
+
+    window.addEventListener('pointerup', () => { dragging = null; });
+    window.addEventListener('pointercancel', () => { dragging = null; });
+
+    // Controls: Reset, Swap Sides, Save/Load/Plan
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      initPositions();
+      plannedMoves = {};
+      renderPlannedMoves();
+      localStorage.removeItem('vb-layout');
+    });
+
+    document.getElementById('swapSidesBtn').addEventListener('click', () => {
+      // Mirror x across the center (x% -> 100 - x%) for all players
+      for (const el of players) {
+        const left = parseFloat(el.style.left);
+        const top = parseFloat(el.style.top); // y remains identical (mirror left-right only)
+        setPlayerPosition(el, 100 - left, 100 - top);
+      }
+      // Also mirror planned moves
+      Object.keys(plannedMoves).forEach(id => {
+        const m = plannedMoves[id];
+        plannedMoves[id] = { 
+            start: { x: 100 - m.start.x, y: 100-m.start.y }, 
+            end: { x: 100 - m.end.x, y: 100-m.end.y } };
+      });
+      renderPlannedMoves();
+      swapTeamLabels();
+    });
+
+    document.getElementById('saveBtn').addEventListener('click', () => {
+      const layout = { players: {}, moves: plannedMoves };
+      for (const el of players) {
+        layout.players[el.dataset.id] = {
+          x: parseFloat(el.style.left),
+          y: parseFloat(el.style.top),
+          team: el.dataset.team,
+        };
+      }
+      localStorage.setItem('vb-layout', JSON.stringify(layout));
+      flash('Layout saved!');
+    });
+
+    document.getElementById('loadBtn').addEventListener('click', () => {
+      const raw = localStorage.getItem('vb-layout');
+      if (!raw) return flash('No saved layout found.');
+      try {
+        const layout = JSON.parse(raw);
+        if (layout.players) {
+          for (const el of players) {
+            const pos = layout.players[el.dataset.id];
+            if (pos) setPlayerPosition(el, pos.x, pos.y);
+          }
+        }
+        plannedMoves = layout.moves || {};
+        renderPlannedMoves();
+        flash('Layout loaded.');
+      } catch (e) {
+        console.error(e);
+        flash('Failed to load layout.');
+      }
+    });
+
+    const orderA = ['A1','A6','A5','A4','A3','A2'];
+    const orderB = ['B1','B6','B5','B4','B3','B2'];
+    function rotateTeam(team){
+      const ids = team === 'A' ? orderA : orderB;
+      const coords = ids.map(id => {
+        const el = Array.from(document.querySelectorAll('.player')).find(p => p.dataset.id === id);
+        return { x: parseFloat(el.style.left), y: parseFloat(el.style.top) };
+      });
+      //const rotated = [coords[coords.length - 1], ...coords.slice(0, -1)];
+      //const rotated = (team==='A') ? [...coords.slice(1),coords[0]] :  [coords[5],...coords.slice(0,-1)];
+      const rotated = [...coords.slice(1),coords[0]];
+      rotated.forEach((pt, i) => {
+        const el = Array.from(document.querySelectorAll('.player')).find(p => p.dataset.id === ids[i]);
+        el && (el.style.left = pt.x + '%', el.style.top = pt.y + '%');
+      });
+    }
+
+    document.getElementById('rotateA').addEventListener('click', () => rotateTeam('A'))
+    document.getElementById('rotateB').addEventListener('click', () => rotateTeam('B'))
+
+
+    // Plan move mode
+    const planBtn = document.getElementById('planBtn');
+    const clearMovesBtn = document.getElementById('clearMovesBtn');
+
+    const planMode = { active: false, selectedId: null };
+
+
+    planBtn.addEventListener('click', () => {
+      planMode.active = !planMode.active;
+      planMode.selectedId = null;
+      planBtn.textContent = planMode.active ? 'Planning… (click player then destination)' : 'Plan Move';
+      flash(planMode.active ? 'Plan mode ON: click a player, then a spot on the court.' : 'Plan mode OFF');
+    });
+
+    clearMovesBtn.addEventListener('click', () => {
+      plannedMoves = {};
+      renderPlannedMoves();
+    });
+
+    // Click on court to set destination when in plan mode
+    court.addEventListener('pointerdown', (e) => {
+      if (!planMode.active || !planMode.selectedId) return;
+      // Ignore if clicked on a player (they handle their own pointerdown)
+      if (e.target.classList.contains('player')) return;
+
+      const rect = court.getBoundingClientRect();
+      const x = ((e.clientX - rect.left) / rect.width) * 100;
+      const y = ((e.clientY - rect.top) / rect.height) * 100;
+
+      const playerEl = players.find(p => p.dataset.id === planMode.selectedId);
+      const start = { x: parseFloat(playerEl.style.left), y: parseFloat(playerEl.style.top) };
+      const end = clampToCourt(x, y, playerEl);
+
+      plannedMoves[planMode.selectedId] = { start, end };
+      renderPlannedMoves();
+
+      planMode.selectedId = null; // ready for next plan
+      flash('Move planned.');
+    });
+
+    // RENDER planned moves into SVG overlay
+    const svg = document.getElementById('movesSvg');
+    
+
+    function pctToSvg(xPct, yPct) {
+      // SVG viewBox is 0..1000 x 0..500 (2:1 aspect). Convert percent to this space.
+      return { x: xPct * 18, y: yPct * 9 };
+    }
+
+    function swapTeamLabels() {
+      labels.forEach(el => {
+        if (el.classList.contains("right"))
+          el.classList.remove("right")
+        else
+        el.classList.add("right")
+      })
+    }
+
+    function renderPlannedMoves() {
+          const svg = document.getElementById('movesSvg');
+          console.log("render")
+// Clear existing
+      svg.innerHTML = svg.innerHTML.split('</defs>')[0] + '</defs>'; // keep defs only
+
+      Object.entries(plannedMoves).forEach(([id, m]) => {
+        const start = pctToSvg(m.start.x, m.start.y);
+        const end = pctToSvg(m.end.x, m.end.y);
+
+        const dx = end.x-start.x;
+        const dy = end.y-start.y;
+        const a = Math.atan2(dy,dx);
+        const rx = 18 * Math.cos(a);
+        const ry = 18 * Math.sin(a);
+
+        console.log("move",start,end,dx,dy,a,rx,ry);
+
+        // Underlay track (white) for contrast
+        const track = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        track.setAttribute('x1', start.x+rx);
+        track.setAttribute('y1', start.y+ry);
+        track.setAttribute('x2', end.x-rx);
+        track.setAttribute('y2', end.y-ry);
+        track.setAttribute('class', 'move-arrow track');
+        track.setAttribute('marker-end', 'url(#arrowHeadTrack)');
+        svg.appendChild(track);
+
+        // Main arrow
+        const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        arrow.setAttribute('x1', start.x + rx);
+        arrow.setAttribute('y1', start.y + ry);
+        arrow.setAttribute('x2', end.x - rx);
+        arrow.setAttribute('y2', end.y-ry);
+        arrow.setAttribute('class', 'move-arrow');
+        arrow.setAttribute('marker-end', 'url(#arrowHead)');
+        svg.appendChild(arrow);
+
+        // Start ring to highlight starting position (in addition to the player dot)
+        const startRing = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        startRing.setAttribute('cx', start.x);
+        startRing.setAttribute('cy', start.y);
+        startRing.setAttribute('r', 18);
+        startRing.setAttribute('class', 'start-ring');
+        svg.appendChild(startRing);
+
+        // End ghost (draggable handle)
+        const endGhost = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        endGhost.setAttribute('cx', end.x);
+        endGhost.setAttribute('cy', end.y);
+        endGhost.setAttribute('r', 20);
+        endGhost.setAttribute('class', 'end-ghost move-handle');
+        endGhost.dataset.playerId = id;
+        endGhost.addEventListener('pointerdown', startDragGhost);
+        svg.appendChild(endGhost);
+
+        // Label at end
+        const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        label.setAttribute('x', end.x); // + 6);
+        label.setAttribute('y', end.y + 6);
+        label.setAttribute('font-size', '18');
+        label.setAttribute('font-weight', '700');
+        label.setAttribute('text-anchor','middle')
+        label.setAttribute('fill', '#111827');
+        label.textContent = id; // + ' →';
+        svg.appendChild(label);
+      });
+    }
+
+          
+    // Dragging ghost end handles
+    let draggingGhost = null;
+    function startDragGhost(e) {
+      e.preventDefault();
+      const target = e.target;
+      draggingGhost = target;
+      target.setPointerCapture(e.pointerId);
+    }
+
+    svg.addEventListener('pointermove', (e) => {
+      if (!draggingGhost) return;
+      const rect = court.getBoundingClientRect();
+      const xPct = ((e.clientX - rect.left) / rect.width) * 100;
+      const yPct = ((e.clientY - rect.top) / rect.height) * 100;
+      const id = draggingGhost.dataset.playerId;
+      const el = players.find(p => p.dataset.id === id);
+      const clamped = clampToCourt(xPct, yPct, el);
+      plannedMoves[id].end = clamped;
+      renderPlannedMoves();
+    });
+    svg.addEventListener('pointerup', () => { draggingGhost = null; });
+    svg.addEventListener('pointercancel', () => { draggingGhost = null; });
+
+    // Little toast message
+    function flash(msg) {
+      const toast = document.createElement('div');
+      toast.textContent = msg;
+      toast.style.position = 'fixed';
+      toast.style.left = '50%';
+      toast.style.bottom = '18px';
+      toast.style.transform = 'translateX(-50%)';
+      toast.style.background = 'rgba(0,0,0,0.75)';
+      toast.style.color = '#fff';
+      toast.style.padding = '8px 12px';
+      toast.style.borderRadius = '10px';
+      toast.style.border = '1px solid rgba(255,255,255,0.2)';
+      toast.style.zIndex = '9999';
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 1400);
+    }
+
+    // Initialize positions once DOM is ready & sizes are known
+    window.addEventListener('load', () => { initPositions(); renderPlannedMoves(); });
+    window.addEventListener('resize', () => {
+      // Re-clamp players to stay within court if layout changes due to resize
+      for (const el of players) {
+        const left = parseFloat(el.style.left) || 0;
+        const top = parseFloat(el.style.top) || 0;
+        setPlayerPosition(el, left, top);
+      }
+      renderPlannedMoves();
+    });
+    window.addEventListener('resize', () => {
+      // Re-clamp players to stay within court if layout changes due to resize
+      for (const el of players) {
+        const left = parseFloat(el.style.left) || 0;
+        const top = parseFloat(el.style.top) || 0;
+        setPlayerPosition(el, left, top);
+      }
+    });
+  
+    
+
+
+  
+  </script>
+</body>
+</html>
