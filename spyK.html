@@ -875,7 +875,7 @@
                             strokeWidth: 3
                         }
                     ):undefined,
-                    Plot.textX(
+                    data.length?Plot.textX(
                         d3.sort(data, (d) => d.rating),
                         Plot.groupZ(
                         {
@@ -892,7 +892,7 @@
                             strokeWidth: 3
                         }
                         )
-                    ),
+                    ):undefined,
                     data.length?Plot.ruleX([0.5],{strokeWidth:3}):undefined
                 ]
             })   
