@@ -802,26 +802,26 @@
                 : undefined
 
         const grade = (ratings) => {
-            const score = nps(ratings);
-            const bins = binExtent(ratings);
-            const grades = "EDCBA";
-            let idx = 0;
-            let minor = "";
-
-            if (!ratings.length) return "";
-
-            while (score > bins[idx][1]) {
-                idx++;
-            }
-
-            const diff = bins[idx][1] - bins[idx][0];
-            if (diff !== 0) {
+              const score = 0.5;
+              const bins = binExtent(ratings);
+              const grades = "EDCBA";
+              let idx = bins.length - 1;
+              let minor = "";
+            
+              while (score < bins[idx][0]) {
+                //console.log("round", idx, score, bins[idx]);
+                idx--;
+              }
+              //console.log("major", grades[idx], score, bins[idx]);
+            
+              const diff = bins[idx][1] - bins[idx][0];
+              if (diff !== 0) {
                 const diff3 = diff / 3;
                 if (score < bins[idx][0] + diff3) minor = "-";
                 else if (score > bins[idx][1] - diff3) minor = "+";
-            }
-
-            return grades[idx] + minor;
+              }
+            
+              return grades[idx] + minor;
         }
 
         function gamePlot(data) {
@@ -893,18 +893,7 @@
                         }
                         )
                     ),
-                    Plot.ruleX([0.5],{stroke:"white",strokeWidth:3,strokeOpacity:.4}),
-                    Plot.ruleX(
-                        d3.sort(data, (d) => d.rating),
-                        Plot.groupZ(
-                        {
-                            x: (d) => nps(d.map((n) => n.rating))
-                        },
-                        {
-                            strokeWidth: 3
-                        }
-                        )
-                    )
+                    Plot.ruleX([0.5],{strokeWidth:3})
                 ]
             })   
         }
