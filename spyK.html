@@ -833,13 +833,14 @@
                 [2, 1]
                 ]);
             return Plot.plot({
-                //marginLeft: 128,
-                marginRight: 48,
-                style: { fontSize: 14, 
+                marginLeft: 40,
+                marginRight: 40,
+                style: { 
+                    fontSize: 14, 
                     fontFamily:'Arial Narrow, Arial, sans-serif'
-                        //fontFamily: "systemui" 
-                       },
-                height: 32,
+                    //fontFamily: "systemui" 
+                },
+                height: 24,
                 //width,
                 y: { grid: true, padding: 0.8, align: 0 },
                 x: {
@@ -862,6 +863,18 @@
                         {fill: "rating"}
                         )
                     ),
+                    data.length?Plot.textX(
+                        [data.length],
+                        {
+                            x: (d) => 0,
+                            textAnchor: "end",
+                            fontSize:32,
+                            fontWeight: 300,
+                            text:d=>d,
+                            dx: -8,
+                            strokeWidth: 3
+                        }
+                    ):undefined,
                     Plot.textX(
                         d3.sort(data, (d) => d.rating),
                         Plot.groupZ(
@@ -873,8 +886,8 @@
                         {
                             x: (d) => 1,
                             textAnchor: "start",
-                            fontWeight: 500,
                             fontSize:32,
+                            fontWeight: 300,
                             dx: 8,
                             strokeWidth: 3
                         }
