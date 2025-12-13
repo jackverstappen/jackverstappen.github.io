@@ -69,6 +69,12 @@
             font-weight: 700;
             margin: 0;
         }
+        .action-label[aria-pressed="true"] {
+            opacity:.4
+        }
+        .action-label[aria-pressed="false"] {
+            opacity:1
+        }
         .action-label p {
             margin: 0;
         }
@@ -615,7 +621,13 @@
             <button class="record-btn" id="downloadBtn">
                 <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" /><path d="M7 11l5 5l5 -5" /><path d="M12 4l0 12" /></svg>
             </button>
+            <button class="record-btn" id="logoBtn">
+                <svg xmlns="http://www.w3.org/2000/svg" id="logo" width="48" height="48" viewBox="0 0 24 24" fill="#faa" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-ball-volleyball"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M14 6m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M4 6l8 0" /><path d="M16 6l4 0" /><path d="M8 12m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M4 12l2 0" /><path d="M10 12l10 0" /><path d="M17 18m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M4 18l11 0" /><path d="M19 18l1 0" /></svg>
+            </button>
             </div>
+
+  
+
 
             <div class="header-right">
                 <button class="team-btn" id="ph3">PH3</button>
@@ -714,8 +726,7 @@
 
     <script>
         const $ = (sel) => document.querySelector(sel);
-
-
+        const STORAGEKEY = "SPYK";
 
         let team = "PH4";
         let recording = false;
@@ -731,10 +742,12 @@
         //const ratingLabels = { 5: 'Excellent', 4: 'Good', 3: 'Average', 2: 'Poor', 1: 'Error' };
         //const ratingClasses = { 5: 'excellent', 4: 'good', 3: 'average', 2: 'poor', 1: 'error' };
         const actions = ['serve', 'pass', 'set', 'attack', 'block', 'defense'];
+        let hidden = []; new Array(actions.length).fill(false);
         const ratingLabels = { 2: '++', 1: '+', 0: 'o', "-1": '-', "-2": '--' };
         const ratingClasses = { 2: 'best', 1: 'good', 0: 'neutral', "-1": 'bad', "-2": 'worst' };
         
         function init() {
+            loadSettings();
             renderSetButtons();
             renderRatingPad();
             //renderActionButtons();
@@ -760,6 +773,124 @@
                 }
             };
             }
+
+        function colorRange(specifier) {
+            var n = (specifier.length / 6) | 0,
+                colors = new Array(n),
+                i = 0;
+            while (i < n) colors[i] = "#" + specifier.slice(i * 6, ++i * 6);
+            return colors;
+        }
+        const binCumul = (arr) => {
+            return [-2, -1, 0, 1, 2].map((r) => {
+                const cohort = arr.filter((n) => n <= r);
+
+                return cohort.length / arr.length;
+            });
+        }   
+
+        const binExtent = (arr) => {
+            const cumul = binCumul(arr);
+            const shifted = cumul.map((n, i, a) => (i ? a[i - 1] : 0));
+
+            return cumul.map((n, i) => [shifted[i], n]);
+        }
+
+        const nps = (arr) =>
+            arr.length
+                ? 0.5 + (0.5 * arr.reduce((a, r) => (a = a + r / 2), 0)) / arr.length
+                : undefined
+
+        const grade = (ratings) => {
+            const score = nps(ratings);
+            const bins = binExtent(ratings);
+            const grades = "EDCBA";
+            let idx = 0;
+            let minor = "";
+
+            if (!ratings.length) return "";
+
+            while (score > bins[idx][1]) {
+                idx++;
+            }
+
+            const diff = bins[idx][1] - bins[idx][0];
+            if (diff !== 0) {
+                const diff3 = diff / 3;
+                if (score < bins[idx][0] + diff3) minor = "-";
+                else if (score > bins[idx][1] - diff3) minor = "+";
+            }
+
+            return grades[idx] + minor;
+        }
+
+        function gamePlot(data) {
+            const likert = Likert([
+                [-2, -1],
+                [-1, -1],
+                [0, 0],
+                [1, 1],
+                [2, 1]
+                ]);
+            return Plot.plot({
+                //marginLeft: 128,
+                marginRight: 28,
+                style: { fontSize: 14, fontFamily: "systemui" },
+                height: 24,
+                //width,
+                y: { grid: true, padding: 0.8, align: 0 },
+                x: {
+                    axis: null,
+                    label: "",
+//                    domain: [-10, 1000],
+                    percent: true
+                },
+                color: {
+                domain: likert.order,
+                domain: [-2, -1, 0, 1, 2],
+                range: colorRange("ca0020f4a582dddddd92c5de0571b0"),
+                legend: false
+                },
+                marks: [
+                    Plot.barX(d3.sort(data, (d) => d.rating),
+                    Plot.groupZ(
+                        { x: "proportion-facet" },
+                        //{ x: "count" },
+                        {fill: "rating"}
+                        )
+                    ),
+                    Plot.textX(
+                        d3.sort(data, (d) => d.rating),
+                        Plot.groupZ(
+                        {
+                            text: (d) => {
+                            return grade(d.map((n) => n.rating));
+                            }
+                        },
+                        {
+                            x: (d) => 1,
+                            textAnchor: "start",
+                            fontWeight: 300,
+                            dx: 8,
+                            strokeWidth: 3
+                        }
+                        )
+                    ),
+                    Plot.ruleX([0.5],{stroke:"white",strokeWidth:3,strokeOpacity:.4}),
+                    Plot.ruleX(
+                        d3.sort(data, (d) => d.rating),
+                        Plot.groupZ(
+                        {
+                            x: (d) => nps(d.map((n) => n.rating))
+                        },
+                        {
+                            strokeWidth: 3
+                        }
+                        )
+                    )
+                ]
+            })   
+        }
 
         function plotChart(maxValue,ds) {
             //const plot = Plot.rectY({length: 10000}, Plot.binX({y: "count"}, {x: Math.random})).plot();
@@ -798,10 +929,24 @@
                 container.appendChild(btn);
             }
         }
+        function toggle(e) {
+            //console.log(e, this); // `e` is `click { target: button#btn-my-toggle ... }`;  `this` is `<button id="btn-my-toggle"...`
+            let action = this.getAttribute('name');
+            let index = actions.findIndex(n=>n==action);
+            if (index<0) return;
+
+            let isPressed_str = this.getAttribute('aria-pressed'); // note, typeof here is String!
+            let isPressed = (isPressed_str === 'true'); // "cast" to Boolean
+            isPressed = !(isPressed); // toggle
+            this.setAttribute('aria-pressed', isPressed);
+            hidden[index] = !hidden[index];
+            saveSettings();
+        }
 
         function renderRatingPad() {
+            console.log("renderRatingPad",actions,hidden);
             const container = document.getElementById('ratingPad');
-            actions.forEach(action => {
+            actions.forEach((action,i) => {
                 const row = document.createElement('div');
                 row.className = 'action-row';
                 //row.textContent = action.charAt(0).toUpperCase() + action.slice(1);
@@ -809,7 +954,11 @@
 
                 const lbl = document.createElement('div');
                 lbl.className = `action-label`;
+                lbl.id = 'toggle';
+                lbl.setAttribute('name',action);
+                lbl.setAttribute('aria-pressed',hidden[i]);
                 lbl.innerHTML = `${action.toUpperCase()}`;
+                lbl.onclick = toggle;
                 row.appendChild(lbl);
 
                 const pad = document.createElement('div');
@@ -891,7 +1040,26 @@
             };
         }
 
-        const STORAGEKEY = "SPYK";
+
+        function loadSettings() {
+            const key = `${STORAGEKEY}-SETTINGS`;
+            const data = JSON.parse(localStorage.getItem(key));
+
+            console.log("Loaded",key,data);
+            if (data) {
+                hidden = data.hidden;
+            }
+        }
+
+        function saveSettings() {
+            const key = `${STORAGEKEY}-SETTINGS`;
+            const data = {
+                hidden
+            }
+            console.log("Saved",key,data);
+            // Data kept in memory
+            localStorage.setItem(key, JSON.stringify(data));
+        }
 
         function loadData() {
             const key = `${STORAGEKEY}-${team}`;
@@ -917,7 +1085,7 @@
                 players,
                 game:actionLog
             }
-            console.log("saving",data);
+            console.log("Saved",data);
             // Data kept in memory
             localStorage.setItem(`${STORAGEKEY}-${team}`, JSON.stringify(data));
         }
@@ -1286,12 +1454,15 @@
                 };
                 
                 list.appendChild(card);
-                const focusLog = actionLog.filter(n=>n);
+                const show = actions.filter((a,i)=>!hidden[i]);
+                const focusLog = actionLog.filter(n=>{ return show.includes(n.action);});
                 const maxValue = calcMaxValue(focusLog);
-                playerLog = actionLog.filter(log => log.player.id === p.id);
+                playerLog = focusLog.filter(log => log.player.id === p.id);
+                //console.log("show",show,actionLog,focusLog,playerLog);
                 const div = document.querySelector(`#plot-${p.number}`);
                 if (div && !recording) div.append(
-                    plotChart(maxValue,playerLog)
+                    gamePlot(playerLog)
+                    //plotChart(maxValue,playerLog)
                 );
 
             });
