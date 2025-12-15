@@ -802,26 +802,24 @@
                 : undefined
 
         const grade = (ratings) => {
-              const score = 0.5;
-              const bins = binExtent(ratings);
-              const grades = "EDCBA";
-              let idx = bins.length - 1;
-              let minor = "";
-            
-              while (score < bins[idx][0]) {
-                //console.log("round", idx, score, bins[idx]);
+            const score = 0.5;
+            const bins = binExtent(ratings);
+            const grades = "EDCBA";
+            let idx = bins.length - 1;
+            let minor = "";
+
+            while (score < bins[idx][0]) {
                 idx--;
-              }
-              //console.log("major", grades[idx], score, bins[idx]);
-            
-              const diff = bins[idx][1] - bins[idx][0];
-              if (diff !== 0) {
+            }
+
+            const diff = bins[idx][1] - bins[idx][0];
+            if (diff !== 0) {
                 const diff3 = diff / 3;
                 if (score < bins[idx][0] + diff3) minor = "-";
                 else if (score > bins[idx][1] - diff3) minor = "+";
-              }
-            
-              return grades[idx] + minor;
+            }
+
+            return grades[idx] + minor;
         }
 
         function gamePlot(data) {
@@ -840,7 +838,7 @@
                     fontFamily:'Arial Narrow, Arial, sans-serif'
                     //fontFamily: "systemui" 
                 },
-                height: 32,
+                height: 24,
                 //width,
                 y: { grid: true, padding: 0.8, align: 0 },
                 x: {
@@ -893,7 +891,7 @@
                         }
                         )
                     ):undefined,
-                    data.length?Plot.ruleX([0.5],{strokeWidth:3}):undefined
+                    data.length?Plot.ruleX([0.5],{strokeWidth:3}):undefined,
                 ]
             })   
         }
@@ -1241,6 +1239,14 @@
             renderActionLog();
         }
 
+        function timestamp() {
+            let r = [];
+            const c = new Date().toISOString().matchAll(/[0-9]+/g);
+
+            c.forEach((n) => r.push(n[0]));
+            return r.join("");
+        }
+
         $('#logoBtn').addEventListener('click', () => {
             if (!confirm('Complete reset? This cannot be undone.')) return;
             console.log("reset");
@@ -1257,8 +1263,9 @@
             const blob = new Blob([dataStr], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
+            const ts = timestamp().substr(0,14);
             a.href = url;
-            a.download = `${team}-export.json`;
+            a.download = `${team}.${ts}.json`;
             a.click();
             URL.revokeObjectURL(url);
         });
