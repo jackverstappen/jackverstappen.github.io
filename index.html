@@ -58,6 +58,7 @@
 
       blockquote {
         padding: 1rem;
+        min-width:12rem;
         padding-left: 2rem;
         position: relative;
         overflow: hidden;
@@ -99,6 +100,12 @@
       background-color: gray;
     }    
     
+    .box {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-around;
+    }
+    
     .columns {
       columns: 2 12rem;
       column-gap: 1rem;
@@ -111,7 +118,7 @@
   <section>
     <h1>(} digitized<b>being</b></h1>
 
-    <div class="columns">
+    <div class="box">
       <blockquote>
         <p><b>digitized</b>: past simple and past participle of digitize</p>
         <p>to put information into the form of a series of the numbers 0 and 1, usually so that it can be understood and used by a computer</p>
