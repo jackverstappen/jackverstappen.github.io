@@ -1,0 +1,117 @@
+<html>
+<head>
+
+ <style>
+    .container {
+    display:flex;
+    height:auto;
+    margin:8px;
+    padding:8px;
+    flex-wrap:wrap;
+    justify-content:space-between;
+    justify-items: auto;
+    flex-direction:column;
+    border: 2px solid navy;
+}
+
+.specific {
+  justify-content: center;
+  align-items: center;
+  display:flex;
+  overflow:hidden;
+  flex-wrap:wrap;
+  background-color:#f8f8f8;
+  padding: 8px;
+  margin: 8px;
+  border: 2px solid navy;
+  border-radius: 8px;
+  text-align:center;
+  padding-inline:12px;
+  font-size:12pt;
+}
+.specific:hover {
+  background-color:#484880;
+  color: white;
+}
+img {
+  height:4rem;
+
+}
+ </style>
+ </head>
+<body>
+<div class="container">
+<div class="specific one">
+  <img src="1.webp">
+  <audio preload="auto" id="sound-one" src ="1.m4a">  </audio>
+</div>    
+<div class="specific two">
+  <img src="2.webp">
+<audio preload="auto" id="sound-two" src ="2.m4a">  </audio>
+</div>    
+<div class="specific three">
+  <img src="3.webp">
+<audio preload="auto" id="sound-three" src ="3.m4a">  </audio>
+</div>    
+<div class="specific four">
+  <img src="4.webp">
+<audio preload="auto" id="sound-four" src ="4.m4a">  </audio>
+</div>    
+<div class="specific five" >
+  <img src="5.webp">
+<audio preload="auto" id="sound-five" src ="5.m4a">  </audio>
+</div>    
+
+
+</div>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script>
+  const numbers = [
+          "one","two","three","four","five"
+      ]
+  $(".specific").mouseover((d) => {
+    const num = d.currentTarget.className.split(" ").find(n=>numbers.includes(n));
+    if (num) {
+      var promise = $(`#sound-${num}`)[0].play();
+
+      if (promise !== undefined) {
+        promise.then(_ => {
+          // Autoplay started!
+        }).catch(error => {
+          // Autoplay was prevented.
+          console.log("Need interaction");
+          // Show a "Play" button so that user can start playback.
+        });
+      }
+    }
+  });
+  
+  $(".specific").mouseleave((d) => {
+    const num = d.currentTarget.className.split(" ").find(n=>numbers.includes(n));
+    if (num){
+      var promise = $(`#sound-${num}`)[0].pause();
+
+      if (promise !== undefined) {
+        promise.then(_ => {
+          // Autoplay started!
+        }).catch(error => {
+          // Autoplay was prevented.
+          console.log("Need interaction");
+          // Show a "Play" button so that user can start playback.
+        });
+      }
+    }
+  });
+
+  $( document ).ready(function() {
+    console.log( "document ready" );
+  });
+
+  $( window ).on( "load", function() {
+    console.log( "window loaded" );
+  });
+
+</script>
+
+</html>
